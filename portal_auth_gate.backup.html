@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสารสนเทศ อบต.ปุโรง - ระบบบริหารจัดการและวิเคราะห์ข้อมูล</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Sarabun -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Sarabun', sans-serif; }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased overflow-x-hidden">
+
+    <!-- ==================== AUTH GATE (LOGIN / REGISTER) ==================== -->
+    <div id="auth-container" class="min-h-screen flex items-center justify-center bg-gradient-to-br from-emerald-800 via-teal-900 to-slate-900 p-4">
+        <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden border border-emerald-100">
+            <!-- Header -->
+            <div class="bg-emerald-700 p-8 text-white text-center relative">
+                <div class="absolute top-4 left-4">
+                    <span class="bg-amber-400 text-slate-900 font-bold text-xs px-3 py-1 rounded-full shadow">อบต.ปุโรง</span>
+                </div>
+                <div class="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl border border-white/30">
+                    <i class="fa-solid fa-landmark text-white"></i>
+                </div>
+                <h1 class="text-xl font-bold">องค์การบริหารส่วนตำบลปุโรง</h1>
+                <p class="text-xs text-emerald-100 mt-1">อำเภอกรงปินัง จังหวัดยะลา</p>
+            </div>
+
+            <!-- Tabs -->
+            <div class="flex border-b border-slate-200 bg-slate-100 p-1.5 gap-1">
+                <button onclick="switchAuthTab('login')" id="tab-login" class="flex-1 py-2.5 text-xs font-bold text-emerald-700 bg-white rounded-xl shadow-sm transition">เข้าสู่ระบบ</button>
+                <button onclick="switchAuthTab('register')" id="tab-register" class="flex-1 py-2.5 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-xl transition">ลงทะเบียนสมาชิก</button>
+            </div>
+
+            <!-- Form Body -->
+            <div class="p-6 sm:p-8">
+                <!-- Login Form -->
+                <form id="form-login" onsubmit="handleLogin(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อผู้ใช้งาน หรือ อีเมล</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-user text-xs"></i></span>
+                            <input type="text" required value="officer.purong" class="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="กรอกชื่อผู้ใช้">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่าน</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-400"><i class="fa-solid fa-lock text-xs"></i></span>
+                            <input type="password" required value="password123" class="w-full pl-10 pr-4 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="••••••••">
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">สิทธิ์การใช้งาน (จำลองบทบาท)</label>
+                        <select id="login-role" class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                            <option value="เจ้าหน้าที่กองคลัง">เจ้าหน้าที่กองคลัง / อบต.ปุโรง</option>
+                            <option value="ผู้บริหาร / นายก อบต.">ผู้บริหาร / นายก อบต.ปุโรง</option>
+                            <option value="ประชาชนทั่วไป">ประชาชนทั่วไป</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg shadow-emerald-600/30 text-xs mt-2">
+                        เข้าสู่ระบบ
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">ชื่อ-นามสกุล</label>
+                        <input type="text" required class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="ระบุชื่อและนามสกุล">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">เบอร์โทรศัพท์ / อีเมล</label>
+                        <input type="text" required class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="0812345678">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">สังกัดกอง / ฝ่าย</label>
+                        <select class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600">
+                            <option>สำนักปลัด อบต.ปุโรง</option>
+                            <option>กองคลัง</option>
+                            <option>กองช่าง</option>
+                            <option>กองสวัสดิการสังคม</option>
+                            <option>กองการศึกษา ศาสนาและวัฒนธรรม</option>
+                            <option>ประชาชนทั่วไป</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-slate-700 mb-1">รหัสผ่าน</label>
+                        <input type="password" required class="w-full px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600" placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-3 rounded-xl transition shadow-lg text-xs mt-2">
+                        ลงทะเบียนสมาชิก
+                    </button>
+                </form>
+            </div>
+            <div class="bg-slate-50 px-6 py-4 border-t border-slate-200 text-center">
+                <p class="text-[11px] text-slate-500">องค์การบริหารส่วนตำบลปุโรง จ.ยะลา © 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN PORTAL (SIDEBAR + CONTENT) ==================== -->
+    <div id="main-portal" class="min-h-screen flex hidden bg-slate-100 relative">
+        
+        <!-- SIDEBAR BACKDROP (สำหรับมือถือเวลาเปิด Sidebar) -->
+        <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/60 z-40 md:hidden hidden transition-opacity"></div>
+
+        <!-- SIDEBAR (Fixed บนจอใหญ่, Slide บนจอเล็ก) -->
+        <aside id="sidebar" class="w-68 bg-emerald-900 text-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out border-r border-emerald-800 shadow-2xl">
+            <!-- Brand -->
+            <div class="p-5 border-b border-emerald-800 flex items-center justify-between bg-emerald-950">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-amber-400 text-slate-900 rounded-xl flex items-center justify-center font-bold text-base shadow">
+                        <i class="fa-solid fa-landmark"></i>
+                    </div>
+                    <div>
+                        <h2 class="text-white font-bold text-xs">อบต.ปุโรง</h2>
+                        <span class="text-[10px] text-amber-300 font-semibold">ระบบสารสนเทศองค์กร</span>
+                    </div>
+                </div>
+                <!-- ปุ่มปิด Sidebar บนมือถือ -->
+                <button onclick="toggleSidebar()" class="md:hidden text-emerald-200 hover:text-white text-lg p-1.5 focus:outline-none">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3.5 py-4 space-y-1.5 overflow-y-auto">
+                <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-bold bg-emerald-600 text-white transition shadow-md shadow-emerald-600/30">
+                    <i class="fa-solid fa-chart-pie w-4 text-center"></i>
+                    <span>แดชบอร์ดภาพรวม</span>
+                </a>
+                <a href="#" onclick="switchTab('upload')" id="nav-upload" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-medium text-emerald-100 hover:bg-emerald-800 hover:text-white transition">
+                    <i class="fa-solid fa-cloud-arrow-up w-4 text-center text-amber-300"></i>
+                    <span>อัพโหลด & แปลงไฟล์ (PDF/Excel)</span>
+                </a>
+                <a href="#" onclick="switchTab('budget')" id="nav-budget" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-medium text-emerald-100 hover:bg-emerald-800 hover:text-white transition">
+                    <i class="fa-solid fa-wallet w-4 text-center text-cyan-300"></i>
+                    <span>ข้อมูลงบประมาณ</span>
+                </a>
+                <a href="#" onclick="switchTab('orc')" id="nav-orc" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-medium text-emerald-100 hover:bg-emerald-800 hover:text-white transition">
+                    <i class="fa-solid fa-chart-line w-4 text-center text-purple-300"></i>
+                    <span>ตัวชี้วัด ORC</span>
+                </a>
+                <a href="#" onclick="switchTab('ai')" id="nav-ai" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-medium text-emerald-100 hover:bg-emerald-800 hover:text-white transition">
+                    <i class="fa-solid fa-robot w-4 text-center text-rose-300"></i>
+                    <span>ถาม-ตอบ AI (Local RAG)</span>
+                </a>
+                <a href="#" onclick="switchTab('org')" id="nav-org" class="flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-medium text-emerald-100 hover:bg-emerald-800 hover:text-white transition">
+                    <i class="fa-solid fa-sitemap w-4 text-center text-amber-300"></i>
+                    <span>โครงสร้างกอง/ฝ่าย</span>
+                </a>
+            </nav>
+
+            <!-- User Footer in Sidebar -->
+            <div class="p-4 border-t border-emerald-800 bg-emerald-950">
+                <div class="flex items-center space-x-3 mb-3">
+                    <div class="w-9 h-9 rounded-xl bg-emerald-600 flex items-center justify-center text-white font-bold text-xs shadow">ผช</div>
+                    <div class="overflow-hidden">
+                        <p id="user-display-name" class="text-xs font-bold text-white truncate">เจ้าหน้าที่กองคลัง</p>
+                        <p id="user-display-role" class="text-[10px] text-emerald-300 truncate">อบต.ปุโรง (กรงปินัง)</p>
+                    </div>
+                </div>
+                <button onclick="handleLogout()" class="w-full flex items-center justify-center space-x-2 bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-xl text-xs font-bold transition shadow-sm">
+                    <i class="fa-solid fa-right-from-bracket text-xs"></i>
+                    <span>ออกจากระบบ</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT CONTAINER (มี Margin ซ้ายบนจอใหญ่ เพื่อเว้นที่ให้ Sidebar) -->
+        <div class="flex-1 flex flex-col md:ml-68 min-w-0">
+            <!-- Top Navbar -->
+            <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-6 sticky top-0 z-30 shadow-sm">
+                <div class="flex items-center space-x-3">
+                    <button onclick="toggleSidebar()" class="md:hidden text-emerald-700 hover:text-emerald-900 text-xl focus:outline-none p-1.5">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <h1 id="page-title" class="text-sm font-bold text-slate-800 truncate">แดชบอร์ดภาพรวม (Executive Summary)</h1>
+                </div>
+                <div class="flex items-center space-x-3">
+                    <span class="bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs px-3.5 py-1.5 rounded-full font-bold flex items-center space-x-2 shadow-xs shrink-0">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                        <span class="hidden sm:inline">สถานะระบบ: ปกติ (ออนไลน์)</span>
+                        <span class="sm:hidden">ออนไลน์</span>
+                    </span>
+                </div>
+            </header>
+
+            <!-- Dynamic Views Container -->
+            <main class="flex-1 p-6 lg:p-8 overflow-y-auto space-y-6">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <div id="view-dashboard" class="space-y-6">
+                    <!-- Stats Cards (หลากสีสันชัดเจน) -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+                        <div class="bg-white p-6 rounded-2xl border-l-4 border-l-blue-600 border border-slate-200 shadow-md">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-500 uppercase">งบประมาณรวมทั้งสิ้น</p>
+                                    <h3 class="text-xl font-bold text-slate-900 mt-1">45,200,000 <span class="text-xs font-normal text-slate-500">บาท</span></h3>
+                                </div>
+                                <div class="w-12 h-12 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-wallet"></i></div>
+                            </div>
+                            <p class="text-xs text-blue-600 mt-4 font-bold flex items-center"><i class="fa-solid fa-arrow-up mr-1.5"></i> +5.2% จากปีงบประมาณก่อน</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border-l-4 border-l-emerald-600 border border-slate-200 shadow-md">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-500 uppercase">เบิกจ่ายแล้วสะสม</p>
+                                    <h3 class="text-xl font-bold text-slate-900 mt-1">28,150,000 <span class="text-xs font-normal text-slate-500">บาท</span></h3>
+                                </div>
+                                <div class="w-12 h-12 bg-emerald-100 text-emerald-700 rounded-2xl flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-chart-pie"></i></div>
+                            </div>
+                            <p class="text-xs text-emerald-700 mt-4 font-bold">คิดเป็น 62.2% ของงบทั้งหมด</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border-l-4 border-l-purple-600 border border-slate-200 shadow-md">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-500 uppercase">ตัวชี้วัด ORC ผ่านเกณฑ์</p>
+                                    <h3 class="text-xl font-bold text-slate-900 mt-1">88.5%</h3>
+                                </div>
+                                <div class="w-12 h-12 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-square-poll-vertical"></i></div>
+                            </div>
+                            <p class="text-xs text-purple-700 mt-4 font-bold">ประเมินรอบล่าสุด ปี 2569</p>
+                        </div>
+                        <div class="bg-white p-6 rounded-2xl border-l-4 border-l-amber-500 border border-slate-200 shadow-md">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-500 uppercase">เอกสารในระบบ</p>
+                                    <h3 class="text-xl font-bold text-slate-900 mt-1">142 <span class="text-xs font-normal text-slate-500">ฉบับ</span></h3>
+                                </div>
+                                <div class="w-12 h-12 bg-amber-100 text-amber-700 rounded-2xl flex items-center justify-center text-lg font-bold"><i class="fa-solid fa-file-arrow-down"></i></div>
+                            </div>
+                            <p class="text-xs text-amber-700 mt-4 font-bold">แปลงและจัดเก็บอัตโนมัติ</p>
+                        </div>
+                    </div>
+
+                    <!-- Charts & Recent Docs Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                        <!-- Chart section -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md lg:col-span-2">
+                            <div class="flex items-center justify-between mb-6">
+                                <h3 class="font-bold text-sm text-slate-900">สัดส่วนการใช้งบประมาณแยกตามกอง/ฝ่าย อบต.ปุโรง</h3>
+                                <span class="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-bold">ปี 2569</span>
+                            </div>
+                            <div class="space-y-4 pt-2">
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-700">สำนักปลัด อบต.ปุโรง</span>
+                                        <span class="text-blue-600">14.2 ล้านบาท (31%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                                        <div class="bg-blue-600 h-full rounded-full" style="width: 31%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-700">กองคลัง</span>
+                                        <span class="text-emerald-600">9.8 ล้านบาท (22%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                                        <div class="bg-emerald-600 h-full rounded-full" style="width: 22%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-700">กองช่าง</span>
+                                        <span class="text-purple-600">12.5 ล้านบาท (28%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                                        <div class="bg-purple-600 h-full rounded-full" style="width: 28%"></div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="flex justify-between text-xs font-bold mb-1.5">
+                                        <span class="text-slate-700">กองสวัสดิการสังคม & กองการศึกษา</span>
+                                        <span class="text-amber-600">8.7 ล้านบาท (19%)</span>
+                                    </div>
+                                    <div class="w-full bg-slate-200 h-3 rounded-full overflow-hidden">
+                                        <div class="bg-amber-500 h-full rounded-full" style="width: 19%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recent Files -->
+                        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-md flex flex-col justify-between">
+                            <div>
+                                <h3 class="font-bold text-sm text-slate-900 mb-4">เอกสารอ้างอิงล่าสุด</h3>
+                                <div class="space-y-3">
+                                    <div class="p-3.5 bg-rose-50 rounded-xl border border-rose-200 text-xs">
+                                        <span class="text-rose-700 font-bold block mb-1">ประกาศจัดซื้อจัดจ้าง (PDF)</span>
+                                        <p class="text-slate-700 truncate">ประกาศ อบต.ปุโรง เรื่อง สอบราคาจ้างโครงการก่อสร้างถนน คสล.</p>
+                                        <span class="text-[10px] text-slate-500 mt-1.5 block">อัพโหลดเมื่อ: 23 ต.ค. 2026</span>
+                                    </div>
+                                    <div class="p-3.5 bg-emerald-50 rounded-xl border border-emerald-200 text-xs">
+                                        <span class="text-emerald-700 font-bold block mb-1">รายงานงบประมาณ (Excel)</span>
+                                        <p class="text-slate-700 truncate">งบทดลองประจำเดือน สรุปผลการเบิกจ่ายไตรมาสที่ 3</p>
+                                        <span class="text-[10px] text-slate-500 mt-1.5 block">อัพโหลดเมื่อ: 20 ต.ค. 2026</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button onclick="switchTab('upload')" class="w-full mt-4 bg-emerald-700 hover:bg-emerald-800 text-white text-xs py-3 rounded-xl font-bold transition shadow">
+                                ไปยังหน้าอัพโหลดไฟล์เพิ่ม
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. UPLOAD VIEW -->
+                <div id="view-upload" class="space-y-6 hidden">
+                    <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-200 shadow-md">
+                        <h3 class="font-bold text-sm text-slate-900 mb-1">ระบบอัพโหลดและแปลงไฟล์ (PDF / Excel)</h3>
+                        <p class="text-xs text-slate-500 mb-6">อัพโหลดเอกสารราชการ งบประมาณ หรือประกาศจาก อบต.ปุโรง เพื่อให้ระบบทำการอ่านข้อความและบันทึกลงฐานข้อมูลอัตโนมัติ</p>
+
+                        <div class="border-2 border-dashed border-emerald-500 rounded-2xl p-10 text-center hover:bg-emerald-50/50 transition cursor-pointer bg-emerald-50/20">
+                            <div class="w-16 h-16 bg-emerald-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-3 text-2xl shadow-lg shadow-emerald-600/30">
+                                <i class="fa-solid fa-cloud-arrow-up"></i>
+                            </div>
+                            <h4 class="font-bold text-xs text-slate-800">ลากไฟล์ PDF หรือ Excel มาวางที่นี่ หรือ <span class="text-emerald-600 underline">คลิกเพื่อเลือกไฟล์</span></h4>
+                            <p class="text-[11px] text-slate-500 mt-1">รองรับไฟล์ .pdf, .xlsx, .xls ขนาดไม่เกิน 50MB</p>
+                        </div>
+
+                        <div class="mt-6 flex flex-col sm:flex-row justify-between items-center gap-4 pt-2">
+                            <div class="w-full sm:w-auto flex items-center space-x-3">
+                                <label class="text-xs font-bold text-slate-700">เลือกกองปลายทาง:</label>
+                                <select class="px-3.5 py-2.5 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium">
+                                    <option>สำนักปลัด อบต.ปุโรง</option>
+                                    <option>กองคลัง</option>
+                                    <option>กองช่าง</option>
+                                    <option>กองสวัสดิการสังคม</option>
+                                </select>
+                            </div>
+                            <button onclick="alert('จำลองการอัพโหลดและแยกวิเคราะห์ข้อมูลสำเร็จ! ข้อมูลถูกบันทึกลง Dashboard แล้ว')" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-lg shadow-emerald-600/30">
+                                <i class="fa-solid fa-gear mr-1.5"></i> เริ่มประมวลผลและจัดเก็บ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Upload History Table -->
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-md overflow-hidden">
+                        <div class="p-5 border-b border-slate-200 bg-slate-50">
+                            <h3 class="font-bold text-xs text-slate-900">ประวัติการอัพโหลดและแปลงข้อมูล</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-100 text-slate-700 border-b border-slate-200">
+                                    <tr>
+                                        <th class="p-4 font-bold">ชื่อไฟล์</th>
+                                        <th class="p-4 font-bold">ประเภท</th>
+                                        <th class="p-4 font-bold">กองสังกัด</th>
+                                        <th class="p-4 font-bold">สถานะการอ่าน</th>
+                                        <th class="p-4 font-bold text-right">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-200 text-slate-800">
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-4 font-bold">a_230926_103242.pdf</td>
+                                        <td class="p-4"><span class="bg-rose-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm">PDF</span></td>
+                                        <td class="p-4 font-medium">กองช่าง อบต.ปุโรง</td>
+                                        <td class="p-4"><span class="text-emerald-700 font-bold flex items-center"><i class="fa-solid fa-circle-check mr-1.5"></i> แปลงสำเร็จ (100%)</span></td>
+                                        <td class="p-4 text-right"><button class="text-emerald-600 hover:underline font-bold">ดูข้อมูล</button></td>
+                                    </tr>
+                                    <tr class="hover:bg-slate-50">
+                                        <td class="p-4 font-bold">budget_69_quarter3.xlsx</td>
+                                        <td class="p-4"><span class="bg-emerald-600 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm">Excel</span></td>
+                                        <td class="p-4 font-medium">กองคลัง</td>
+                                        <td class="p-4"><span class="text-emerald-700 font-bold flex items-center"><i class="fa-solid fa-circle-check mr-1.5"></i> แปลงสำเร็จ (100%)</span></td>
+                                        <td class="p-4 text-right"><button class="text-emerald-600 hover:underline font-bold">ดูข้อมูล</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. BUDGET VIEW -->
+                <div id="view-budget" class="space-y-6 hidden">
+                    <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-200 shadow-md">
+                        <h3 class="font-bold text-sm text-slate-900 mb-6">รายงานข้อมูลงบประมาณประจำปี 2569 - อบต.ปุโรง</h3>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+                            <div class="bg-blue-50 p-5 rounded-2xl border border-blue-200">
+                                <span class="text-xs font-bold text-blue-800">รายรับจริงสะสม</span>
+                                <h4 class="text-xl font-bold text-blue-900 mt-1">38,400,000 <span class="text-xs font-normal text-blue-700">บาท</span></h4>
+                            </div>
+                            <div class="bg-amber-50 p-5 rounded-2xl border border-amber-200">
+                                <span class="text-xs font-bold text-amber-800">รายจ่ายตามข้อบัญญัติ</span>
+                                <h4 class="text-xl font-bold text-amber-900 mt-1">28,150,000 <span class="text-xs font-normal text-amber-700">บาท</span></h4>
+                            </div>
+                            <div class="bg-emerald-50 p-5 rounded-2xl border border-emerald-200">
+                                <span class="text-xs font-bold text-emerald-800">งบประมาณคงเหลือสุทธิ</span>
+                                <h4 class="text-xl font-bold text-emerald-900 mt-1">17,050,000 <span class="text-xs font-normal text-emerald-700">บาท</span></h4>
+                            </div>
+                        </div>
+                        <p class="text-xs text-slate-700 bg-slate-50 p-4 rounded-xl border border-slate-200">ข้อมูลนี้เชื่อมโยงและอ่านอัตโนมัติจากไฟล์ Excel งบทดลองประจำเดือนที่อัพโหลดเข้าระบบ</p>
+                    </div>
+                </div>
+
+                <!-- 4. ORC VIEW -->
+                <div id="view-orc" class="space-y-6 hidden">
+                    <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-200 shadow-md">
+                        <h3 class="font-bold text-sm text-slate-900 mb-1">ตัวชี้วัดผลการปฏิบัติงาน (ORC - Operational Result Control)</h3>
+                        <p class="text-xs text-slate-500 mb-6">ผลการประเมินประสิทธิภาพและตัวชี้วัดตามแผนพัฒนาท้องถิ่นของ อบต.ปุโรง</p>
+                        
+                        <div class="space-y-5">
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-2">
+                                    <span class="text-slate-800">1. การจัดบริการสาธารณะและความพึงพอใจประชาชน</span>
+                                    <span class="text-emerald-700">92% (ผ่านดีมาก)</span>
+                                </div>
+                                <div class="w-full bg-slate-200 h-3.5 rounded-full overflow-hidden">
+                                    <div class="bg-emerald-600 h-full rounded-full" style="width: 92%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-2">
+                                    <span class="text-slate-800">2. การบริหารจัดการงบประมาณและความโปร่งใส</span>
+                                    <span class="text-blue-600">88% (ผ่านเกณฑ์)</span>
+                                </div>
+                                <div class="w-full bg-slate-200 h-3.5 rounded-full overflow-hidden">
+                                    <div class="bg-blue-600 h-full rounded-full" style="width: 88%"></div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="flex justify-between text-xs font-bold mb-2">
+                                    <span class="text-slate-800">3. โครงสร้างพื้นฐานและการซ่อมบำรุงในตำบลปุโรง</span>
+                                    <span class="text-purple-600">85% (ผ่านเกณฑ์)</span>
+                                </div>
+                                <div class="w-full bg-slate-200 h-3.5 rounded-full overflow-hidden">
+                                    <div class="bg-purple-600 h-full rounded-full" style="width: 85%"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. AI Q&A VIEW -->
+                <div id="view-ai" class="space-y-6 hidden">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-md flex flex-col h-[520px] overflow-hidden">
+                        <div class="p-4.5 border-b border-slate-200 bg-emerald-50 flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-9 h-9 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-sm shadow"><i class="fa-solid fa-robot"></i></div>
+                                <div>
+                                    <h3 class="font-bold text-xs text-emerald-900">ผู้ช่วยอัจฉริยะ อบต.ปุโรง (AI Assistant)</h3>
+                                    <span class="text-[10px] text-emerald-700 font-bold">สืบค้นจากเอกสารภายในเครื่อง/ระบบ</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50 text-xs">
+                            <div class="flex items-start space-x-3">
+                                <div class="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center text-xs font-bold shadow">AI</div>
+                                <div class="bg-white p-4 rounded-2xl border border-slate-200 max-w-lg text-slate-800 shadow-sm leading-relaxed">
+                                    สวัสดีครับ! ผมคือผู้ช่วยอัจฉริยะของ อบต.ปุโรง สามารถถามข้อมูลเกี่ยวกับงบประมาณ โครงการ หรือระเบียบประกาศที่อัพโหลดไว้ได้เลยครับ
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-4 border-t border-slate-200 bg-white flex items-center space-x-3">
+                            <input type="text" class="flex-1 px-4 py-3 text-xs bg-slate-50 border border-slate-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-600 font-medium" placeholder="พิมพ์คำถาม เช่น งบประมาณกองช่างปี 2569 มีเท่าไหร่?">
+                            <button class="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-3 rounded-xl text-xs font-bold transition shadow-lg shadow-emerald-600/30"><i class="fa-solid fa-paper-plane"></i></button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. ORG STRUCTURE VIEW -->
+                <div id="view-org" class="space-y-6 hidden">
+                    <div class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-200 shadow-md">
+                        <h3 class="font-bold text-sm text-slate-900 mb-6">โครงสร้างองค์กร องค์การบริหารส่วนตำบลปุโรง (อำเภอกรงปินัง จังหวัดยะลา)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div class="p-5 bg-blue-50/60 rounded-2xl border border-blue-200 shadow-xs">
+                                <h4 class="font-bold text-xs text-blue-900 mb-1.5 flex items-center"><i class="fa-solid fa-folder-open mr-2 text-blue-600"></i> สำนักปลัด อบต.</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">งานบริหารงานทั่วไป งานนิติการ งานป้องกันและบรรเทาสาธารณภัย</p>
+                            </div>
+                            <div class="p-5 bg-emerald-50/60 rounded-2xl border border-emerald-200 shadow-xs">
+                                <h4 class="font-bold text-xs text-emerald-900 mb-1.5 flex items-center"><i class="fa-solid fa-coins mr-2 text-emerald-600"></i> กองคลัง</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">งานการเงิน งานบัญชี งานจัดเก็บรายได้ และงานพัสดุ</p>
+                            </div>
+                            <div class="p-5 bg-purple-50/60 rounded-2xl border border-purple-200 shadow-xs">
+                                <h4 class="font-bold text-xs text-purple-900 mb-1.5 flex items-center"><i class="fa-solid fa-helmet-safety mr-2 text-purple-600"></i> กองช่าง</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">งานวิศวกรรม งานสถาปัตยกรรม และงานสาธารณูปโภค</p>
+                            </div>
+                            <div class="p-5 bg-amber-50/60 rounded-2xl border border-amber-200 shadow-xs">
+                                <h4 class="font-bold text-xs text-amber-900 mb-1.5 flex items-center"><i class="fa-solid fa-hands-holding-child mr-2 text-amber-600"></i> กองสวัสดิการสังคม</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">งานสวัสดิการและพัฒนาชุมชน งานสังคมสงเคราะห์</p>
+                            </div>
+                            <div class="p-5 bg-rose-50/60 rounded-2xl border border-rose-200 shadow-xs">
+                                <h4 class="font-bold text-xs text-rose-900 mb-1.5 flex items-center"><i class="fa-solid fa-graduation-cap mr-2 text-rose-600"></i> กองการศึกษา ศาสนาและวัฒนธรรม</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">งานส่งเสริมการศึกษา ศูนย์พัฒนาเด็กเล็ก</p>
+                            </div>
+                            <div class="p-5 bg-cyan-50/60 rounded-2xl border border-cyan-200 shadow-xs">
+                                <h4 class="font-bold text-xs text-cyan-900 mb-1.5 flex items-center"><i class="fa-solid fa-shield-halved mr-2 text-cyan-600"></i> หน่วยตรวจสอบภายใน</h4>
+                                <p class="text-[11px] text-slate-600 leading-relaxed">งานตรวจสอบทานระบบการเงินและบัญชีภายใน</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Script สำหรับควบคุมการทำงาน -->
+    <script>
+        function switchAuthTab(tab) {
+            if(tab === 'login') {
+                document.getElementById('form-login').classList.remove('hidden');
+                document.getElementById('form-register').classList.add('hidden');
+                document.getElementById('tab-login').className = "flex-1 py-2.5 text-xs font-bold text-emerald-700 bg-white rounded-xl shadow-sm transition";
+                document.getElementById('tab-register').className = "flex-1 py-2.5 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-xl transition";
+            } else {
+                document.getElementById('form-login').classList.add('hidden');
+                document.getElementById('form-register').classList.remove('hidden');
+                document.getElementById('tab-register').className = "flex-1 py-2.5 text-xs font-bold text-emerald-700 bg-white rounded-xl shadow-sm transition";
+                document.getElementById('tab-login').className = "flex-1 py-2.5 text-xs font-medium text-slate-600 hover:text-slate-900 rounded-xl transition";
+            }
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const role = document.getElementById('login-role').value;
+            document.getElementById('user-display-name').innerText = role;
+            
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('main-portal').classList.remove('hidden');
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            alert('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ');
+            switchAuthTab('login');
+        }
+
+        function handleLogout() {
+            document.getElementById('main-portal').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        const viewTitles = {
+            'dashboard': 'แดชบอร์ดภาพรวม (Executive Summary)',
+            'upload': 'ระบบอัพโหลดและแปลงไฟล์ (PDF / Excel)',
+            'budget': 'ข้อมูลงบประมาณและรายรับ-รายจ่าย',
+            'orc': 'ตัวชี้วัดผลการปฏิบัติงาน (ORC)',
+            'ai': 'ผู้ช่วยอัจฉริยะ ถาม-ตอบ เอกสาร (AI Q&A)',
+            'org': 'โครงสร้างกอง/ฝ่าย องค์การบริหารส่วนตำบลปุโรง'
+        };
+
+        function switchTab(tabId) {
+            ['dashboard', 'upload', 'budget', 'orc', 'ai', 'org'].forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                document.getElementById('nav-' + t).className = "flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-medium text-emerald-100 hover:bg-emerald-800 hover:text-white transition";
+            });
+            document.getElementById('view-' + tabId).classList.remove('hidden');
+            document.getElementById('nav-' + tabId).className = "flex items-center space-x-3 px-3.5 py-3 rounded-xl text-xs font-bold bg-emerald-600 text-white transition shadow-md shadow-emerald-600/30";
+            document.getElementById('page-title').innerText = viewTitles[tabId];
+
+            if(window.innerWidth < 768) {
+                toggleSidebar();
+            }
+        }
+    </script>
+</body>
+</html>

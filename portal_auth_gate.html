@@ -1,0 +1,1335 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ระบบสารสนเทศ อบต.ปุโรง - ระบบบริหารจัดการและวิเคราะห์ข้อมูล</title>
+    <link rel="icon" href="logo.png">
+    <!-- ข้อมูลที่แปลงจาก PDF ด้วย tools/extract_budget.py -->
+    <script src="data/budget_2570.js"></script>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com/3.4.16"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"IBM Plex Sans Thai"', 'Sarabun', 'sans-serif'],
+                        display: ['Prompt', '"IBM Plex Sans Thai"', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#ecfdf5', 100: '#d1fae5', 200: '#a7f3d0', 300: '#6ee7b7', 400: '#34d399',
+                            500: '#10b981', 600: '#059669', 700: '#047857', 800: '#065f46', 900: '#064e3b', 950: '#022c22',
+                        },
+                    },
+                    boxShadow: {
+                        soft: '0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.12)',
+                        glow: '0 10px 30px -10px rgba(5,150,105,.55)',
+                    },
+                },
+            },
+        };
+    </script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=Prompt:wght@500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style type="text/tailwindcss">
+        @layer components {
+            .card { @apply bg-white rounded-2xl border border-slate-200/70 shadow-soft; }
+            .card-title { @apply font-display font-semibold text-base text-slate-900; }
+            .field { @apply w-full px-4 py-3 text-sm bg-slate-50 border border-slate-200 rounded-xl text-slate-800 placeholder:text-slate-400 transition focus:outline-none focus:bg-white focus:border-brand-500 focus:ring-4 focus:ring-brand-500/15; }
+            .field-icon { @apply pl-11; }
+            .label { @apply block text-[13px] font-semibold text-slate-700 mb-1.5; }
+            .btn-primary { @apply inline-flex items-center justify-center gap-2 bg-gradient-to-r from-brand-600 to-teal-600 hover:from-brand-700 hover:to-teal-700 text-white font-semibold text-sm px-5 py-3 rounded-xl shadow-glow transition active:scale-[.98]; }
+            .btn-ghost { @apply inline-flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900 hover:bg-slate-100 font-medium text-sm px-3 py-2 rounded-xl transition; }
+            .nav-link { @apply relative flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-emerald-100/75 hover:bg-white/5 hover:text-white transition; }
+            .nav-link i { @apply w-5 text-center text-[15px] text-emerald-300/70 transition; }
+            .nav-link.active { @apply bg-white/10 text-white font-semibold shadow-inner; }
+            .nav-link.active i { @apply text-amber-300; }
+            .nav-link.active::before { content: ''; @apply absolute -left-3.5 top-2 bottom-2 w-1 rounded-r-full bg-amber-400; }
+            .auth-tab { @apply relative z-10 flex-1 py-2.5 text-sm font-semibold rounded-lg transition-colors text-slate-500 hover:text-slate-800; }
+            .auth-tab.active { @apply text-brand-700; }
+            .chip { @apply inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full; }
+            .kpi-icon { @apply w-11 h-11 rounded-xl flex items-center justify-center text-lg; }
+            .bar-track { @apply w-full bg-slate-100 h-2.5 rounded-full overflow-hidden; }
+            .bar-fill { @apply h-full rounded-full transition-[width] duration-1000 ease-out; }
+        }
+    </style>
+    <style>
+        body { font-family: 'IBM Plex Sans Thai', 'Sarabun', sans-serif; }
+        .auth-bg {
+            background:
+                radial-gradient(60rem 40rem at 10% 10%, rgba(16,185,129,.35), transparent 60%),
+                radial-gradient(50rem 35rem at 90% 90%, rgba(245,158,11,.18), transparent 60%),
+                radial-gradient(40rem 30rem at 80% 10%, rgba(20,184,166,.25), transparent 60%),
+                #022c22;
+        }
+        .grid-pattern {
+            background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(ellipse at center, #000 30%, transparent 75%);
+        }
+        .sidebar-bg { background: linear-gradient(180deg, #053d2f 0%, #022c22 100%); }
+        .fade-in { animation: fadeIn .35s ease-out both; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+        .scrollbar-thin::-webkit-scrollbar { width: 6px; }
+        .scrollbar-thin::-webkit-scrollbar-thumb { background: rgba(148,163,184,.4); border-radius: 9999px; }
+        .ring-progress circle { transition: stroke-dashoffset 1.2s ease-out; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 antialiased overflow-x-hidden">
+
+    <!-- ==================== AUTH GATE (LOGIN / REGISTER) ==================== -->
+    <div id="auth-container" class="auth-bg min-h-screen relative flex items-center justify-center p-4 sm:p-8 overflow-hidden">
+        <div class="grid-pattern absolute inset-0 pointer-events-none"></div>
+
+        <div class="relative w-full max-w-5xl grid grid-cols-1 lg:grid-cols-2 rounded-3xl overflow-hidden shadow-2xl shadow-black/40 ring-1 ring-white/10 fade-in">
+            <!-- Hero Panel -->
+            <div class="hidden lg:flex flex-col justify-between p-10 bg-white/5 backdrop-blur-xl text-white border-r border-white/10">
+                <div class="flex items-center gap-3">
+                    <img src="logo.png" alt="ตราสัญลักษณ์ อบต.ปุโรง" class="w-12 h-12 rounded-full bg-white p-0.5 shadow-lg">
+                    <div>
+                        <p class="font-display font-semibold leading-tight">อบต.ปุโรง</p>
+                        <p class="text-xs text-emerald-200/80">อ.กรงปินัง จ.ยะลา</p>
+                    </div>
+                </div>
+
+                <div>
+                    <span class="chip bg-amber-400/15 text-amber-300 ring-1 ring-amber-300/30 mb-5"><i class="fa-solid fa-wand-magic-sparkles"></i> Smart Local Government</span>
+                    <h2 class="font-display text-3xl xl:text-4xl font-semibold leading-tight">ระบบสารสนเทศ<br>เพื่อการบริหารจัดการ<br><span class="text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-amber-300">และวิเคราะห์ข้อมูล</span></h2>
+                    <p class="mt-4 text-sm text-emerald-100/70 max-w-sm leading-relaxed">รวมข้อมูลงบประมาณ ตัวชี้วัด และเอกสารราชการไว้ในที่เดียว พร้อมผู้ช่วย AI สำหรับค้นหาข้อมูลอย่างรวดเร็ว</p>
+
+                    <ul class="mt-8 space-y-3 text-sm">
+                        <li class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-emerald-300"><i class="fa-solid fa-chart-pie"></i></span> แดชบอร์ดงบประมาณแบบเรียลไทม์</li>
+                        <li class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-amber-300"><i class="fa-solid fa-file-import"></i></span> แปลงไฟล์ PDF / Excel อัตโนมัติ</li>
+                        <li class="flex items-center gap-3"><span class="w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-teal-300"><i class="fa-solid fa-robot"></i></span> ถาม-ตอบเอกสารด้วย AI (Local RAG)</li>
+                    </ul>
+                </div>
+
+                <p class="text-xs text-emerald-100/50">© 2026 องค์การบริหารส่วนตำบลปุโรง</p>
+            </div>
+
+            <!-- Form Panel -->
+            <div class="bg-white p-6 sm:p-10 min-w-0">
+                <div class="text-center lg:text-left mb-7">
+                    <img src="logo.png" alt="ตราสัญลักษณ์ อบต.ปุโรง" class="lg:hidden w-20 h-20 mx-auto mb-3 rounded-full shadow-lg ring-4 ring-brand-50">
+                    <h1 class="font-display text-2xl font-semibold text-slate-900">ยินดีต้อนรับ 👋</h1>
+                    <p class="text-sm text-slate-500 mt-1">องค์การบริหารส่วนตำบลปุโรง อำเภอกรงปินัง จังหวัดยะลา</p>
+                </div>
+
+                <!-- Tabs (segmented control) -->
+                <div class="relative flex bg-slate-100 p-1 rounded-xl mb-7">
+                    <span id="auth-tab-indicator" class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-white rounded-lg shadow-sm transition-transform duration-300 ease-out"></span>
+                    <button type="button" onclick="switchAuthTab('login')" id="tab-login" class="auth-tab active">เข้าสู่ระบบ</button>
+                    <button type="button" onclick="switchAuthTab('register')" id="tab-register" class="auth-tab">ลงทะเบียนสมาชิก</button>
+                </div>
+
+                <!-- Login Form -->
+                <form id="form-login" onsubmit="handleLogin(event)" class="space-y-5 fade-in">
+                    <div>
+                        <label class="label">ชื่อผู้ใช้งาน หรือ อีเมล</label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-regular fa-user text-sm"></i></span>
+                            <input type="text" required value="officer.purong" class="field field-icon" placeholder="กรอกชื่อผู้ใช้">
+                        </div>
+                    </div>
+                    <div>
+                        <div class="flex items-center justify-between">
+                            <label class="label">รหัสผ่าน</label>
+                            <a href="#" class="text-xs font-medium text-brand-600 hover:text-brand-700 mb-1.5">ลืมรหัสผ่าน?</a>
+                        </div>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-lock text-sm"></i></span>
+                            <input id="login-password" type="password" required value="password123" class="field field-icon pr-11" placeholder="••••••••">
+                            <button type="button" onclick="togglePassword('login-password', this)" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600" aria-label="แสดงรหัสผ่าน">
+                                <i class="fa-regular fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label">สิทธิ์การใช้งาน <span class="font-normal text-slate-400">(จำลองบทบาท)</span></label>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-user-shield text-sm"></i></span>
+                            <select id="login-role" class="field field-icon appearance-none pr-10">
+                                <option value="เจ้าหน้าที่กองคลัง">เจ้าหน้าที่กองคลัง / อบต.ปุโรง</option>
+                                <option value="ผู้บริหาร / นายก อบต.">ผู้บริหาร / นายก อบต.ปุโรง</option>
+                                <option value="ประชาชนทั่วไป">ประชาชนทั่วไป</option>
+                            </select>
+                            <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+                        </div>
+                    </div>
+                    <label class="flex items-center gap-2 text-sm text-slate-600 select-none cursor-pointer">
+                        <input type="checkbox" checked class="w-4 h-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500 accent-emerald-600">
+                        จดจำการเข้าสู่ระบบ
+                    </label>
+                    <button type="submit" class="btn-primary w-full py-3.5">
+                        เข้าสู่ระบบ <i class="fa-solid fa-arrow-right text-xs"></i>
+                    </button>
+                </form>
+
+                <!-- Register Form -->
+                <form id="form-register" onsubmit="handleRegister(event)" class="space-y-4 hidden">
+                    <div>
+                        <label class="label">ชื่อ-นามสกุล</label>
+                        <input type="text" required class="field" placeholder="ระบุชื่อและนามสกุล">
+                    </div>
+                    <div>
+                        <label class="label">เบอร์โทรศัพท์ / อีเมล</label>
+                        <input type="text" required class="field" placeholder="0812345678">
+                    </div>
+                    <div>
+                        <label class="label">สังกัดกอง / ฝ่าย</label>
+                        <div class="relative">
+                            <select class="field appearance-none pr-10">
+                                <option>สำนักปลัด อบต.ปุโรง</option>
+                                <option>กองคลัง</option>
+                                <option>กองช่าง</option>
+                                <option>กองสวัสดิการสังคม</option>
+                                <option>กองการศึกษา ศาสนาและวัฒนธรรม</option>
+                                <option>ประชาชนทั่วไป</option>
+                            </select>
+                            <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="label">รหัสผ่าน</label>
+                        <div class="relative">
+                            <input id="register-password" type="password" required class="field pr-11" placeholder="••••••••">
+                            <button type="button" onclick="togglePassword('register-password', this)" class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-slate-600" aria-label="แสดงรหัสผ่าน">
+                                <i class="fa-regular fa-eye text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary w-full py-3.5 mt-2">
+                        ลงทะเบียนสมาชิก <i class="fa-solid fa-user-plus text-xs"></i>
+                    </button>
+                </form>
+
+                <p class="mt-8 text-center text-xs text-slate-400 lg:hidden">องค์การบริหารส่วนตำบลปุโรง จ.ยะลา © 2026</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MAIN PORTAL (SIDEBAR + CONTENT) ==================== -->
+    <div id="main-portal" class="min-h-screen hidden bg-slate-50 relative">
+
+        <!-- SIDEBAR BACKDROP (สำหรับมือถือเวลาเปิด Sidebar) -->
+        <div id="sidebar-backdrop" onclick="toggleSidebar()" class="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-40 md:hidden hidden"></div>
+
+        <!-- SIDEBAR (Fixed บนจอใหญ่, Slide บนจอเล็ก) -->
+        <aside id="sidebar" class="sidebar-bg w-72 text-slate-200 flex flex-col fixed inset-y-0 left-0 z-50 transform -translate-x-full md:translate-x-0 transition-transform duration-300 ease-in-out">
+            <!-- Brand -->
+            <div class="px-5 h-20 flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <img src="logo.png" alt="โลโก้ อบต.ปุโรง" class="w-11 h-11 rounded-full bg-white p-0.5 shadow-lg ring-2 ring-amber-400/60">
+                    <div>
+                        <h2 class="font-display text-white font-semibold text-base leading-tight">อบต.ปุโรง</h2>
+                        <span class="text-xs text-amber-300/90 font-medium">ระบบสารสนเทศองค์กร</span>
+                    </div>
+                </div>
+                <!-- ปุ่มปิด Sidebar บนมือถือ -->
+                <button onclick="toggleSidebar()" class="md:hidden w-9 h-9 rounded-lg text-emerald-200 hover:text-white hover:bg-white/10 focus:outline-none">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+
+            <!-- Navigation Links -->
+            <nav class="flex-1 px-3.5 py-3 overflow-y-auto scrollbar-thin">
+                <p class="px-3.5 mb-2 text-[11px] font-semibold tracking-wider uppercase text-emerald-300/50">ภาพรวม</p>
+                <div class="space-y-1">
+                    <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-link active">
+                        <i class="fa-solid fa-chart-pie"></i><span>แดชบอร์ดภาพรวม</span>
+                    </a>
+                    <a href="#" onclick="switchTab('budget')" id="nav-budget" class="nav-link">
+                        <i class="fa-solid fa-wallet"></i><span>ข้อมูลงบประมาณ</span>
+                    </a>
+                    <a href="#" onclick="switchTab('orc')" id="nav-orc" class="nav-link">
+                        <i class="fa-solid fa-chart-line"></i><span>ตัวชี้วัด ORC</span>
+                    </a>
+                </div>
+
+                <p class="px-3.5 mt-6 mb-2 text-[11px] font-semibold tracking-wider uppercase text-emerald-300/50">เครื่องมือ</p>
+                <div class="space-y-1">
+                    <a href="#" onclick="switchTab('upload')" id="nav-upload" class="nav-link">
+                        <i class="fa-solid fa-cloud-arrow-up"></i><span>อัพโหลด & แปลงไฟล์</span>
+                        <span class="ml-auto text-[10px] font-semibold bg-white/10 text-emerald-100 px-1.5 py-0.5 rounded-md">PDF/XLS</span>
+                    </a>
+                    <a href="#" onclick="switchTab('ai')" id="nav-ai" class="nav-link">
+                        <i class="fa-solid fa-robot"></i><span>ถาม-ตอบ AI</span>
+                        <span class="ml-auto text-[10px] font-bold bg-amber-400 text-slate-900 px-1.5 py-0.5 rounded-md">NEW</span>
+                    </a>
+                </div>
+
+                <p class="px-3.5 mt-6 mb-2 text-[11px] font-semibold tracking-wider uppercase text-emerald-300/50">องค์กร</p>
+                <div class="space-y-1">
+                    <a href="#" onclick="switchTab('org')" id="nav-org" class="nav-link">
+                        <i class="fa-solid fa-sitemap"></i><span>โครงสร้างกอง/ฝ่าย</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- User Footer in Sidebar -->
+            <div class="p-3.5">
+                <div class="flex items-center gap-3 p-3 rounded-2xl bg-white/5 ring-1 ring-white/10">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 flex items-center justify-center text-slate-900 font-bold text-sm shrink-0">ผช</div>
+                    <div class="overflow-hidden flex-1">
+                        <p id="user-display-name" class="text-sm font-semibold text-white truncate">เจ้าหน้าที่กองคลัง</p>
+                        <p id="user-display-role" class="text-xs text-emerald-300/80 truncate">อบต.ปุโรง (กรงปินัง)</p>
+                    </div>
+                    <button onclick="handleLogout()" title="ออกจากระบบ" class="w-9 h-9 shrink-0 rounded-lg text-emerald-200 hover:text-white hover:bg-rose-500/80 transition">
+                        <i class="fa-solid fa-right-from-bracket text-sm"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- MAIN CONTENT CONTAINER (มี Padding ซ้ายบนจอใหญ่ เพื่อเว้นที่ให้ Sidebar) -->
+        <div class="flex flex-col min-h-screen md:pl-72 min-w-0">
+            <!-- Top Navbar -->
+            <header class="bg-white/80 backdrop-blur-md border-b border-slate-200/70 h-16 flex items-center justify-between gap-4 px-4 sm:px-6 lg:px-8 sticky top-0 z-30">
+                <div class="flex items-center gap-3 min-w-0">
+                    <button onclick="toggleSidebar()" class="md:hidden w-10 h-10 rounded-xl text-slate-600 hover:bg-slate-100 focus:outline-none">
+                        <i class="fa-solid fa-bars"></i>
+                    </button>
+                    <div class="min-w-0">
+                        <p class="hidden sm:block text-xs text-slate-400">อบต.ปุโรง <i class="fa-solid fa-chevron-right text-[9px] mx-1"></i> <span id="page-crumb">แดชบอร์ด</span></p>
+                        <h1 id="page-title" class="font-display text-base font-semibold text-slate-900 truncate">แดชบอร์ดภาพรวม (Executive Summary)</h1>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 shrink-0">
+                    <div class="hidden lg:flex items-center gap-2 bg-slate-100 rounded-xl px-3.5 py-2 text-sm text-slate-400 w-64">
+                        <i class="fa-solid fa-magnifying-glass text-xs"></i>
+                        <input id="global-search" type="text" placeholder="ค้นหารายการงบประมาณ..." class="bg-transparent flex-1 focus:outline-none text-slate-700 placeholder:text-slate-400">
+                    </div>
+                    <span class="chip bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">
+                        <span class="relative flex w-2 h-2"><span class="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span><span class="relative inline-flex rounded-full w-2 h-2 bg-emerald-500"></span></span>
+                        <span class="hidden sm:inline">ระบบปกติ</span>
+                        <span class="sm:hidden">ออนไลน์</span>
+                    </span>
+                    <button class="relative w-10 h-10 rounded-xl text-slate-500 hover:bg-slate-100 hover:text-slate-700" aria-label="การแจ้งเตือน">
+                        <i class="fa-regular fa-bell"></i>
+                        <span class="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
+                    </button>
+                </div>
+            </header>
+
+            <!-- Dynamic Views Container -->
+            <main class="flex-1 p-4 sm:p-6 lg:p-8">
+
+                <!-- 1. DASHBOARD VIEW -->
+                <div id="view-dashboard" class="space-y-6 fade-in">
+                    <!-- Welcome banner -->
+                    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-brand-700 via-brand-800 to-teal-900 p-6 sm:p-8 text-white shadow-glow">
+                        <div class="absolute -right-10 -top-16 w-64 h-64 rounded-full bg-white/10 blur-2xl"></div>
+                        <div class="absolute right-24 -bottom-20 w-56 h-56 rounded-full bg-amber-400/20 blur-2xl"></div>
+                        <div class="relative flex flex-col lg:flex-row lg:items-end justify-between gap-5">
+                            <div>
+                                <p class="text-sm text-emerald-100/80">สวัสดี, <span id="welcome-name">เจ้าหน้าที่กองคลัง</span></p>
+                                <span class="chip bg-white/10 text-amber-200 ring-1 ring-white/15 mt-3"><i class="fa-solid fa-scroll"></i> <span id="doc-title"></span></span>
+                                <h2 class="font-display text-2xl sm:text-3xl font-semibold mt-3 tabular-nums">งบประมาณรายจ่ายทั้งสิ้น <span id="hero-total" class="text-amber-300"></span> บาท</h2>
+                                <p class="text-sm text-emerald-100/70 mt-1.5">ประกาศใช้ <span id="hero-announced"></span> · มีผลบังคับใช้ <span id="hero-effective"></span> · ที่มา <span id="hero-source" class="underline decoration-dotted underline-offset-4"></span></p>
+                            </div>
+                            <button onclick="switchTab('budget')" class="shrink-0 inline-flex items-center gap-2 bg-white text-brand-800 hover:bg-amber-50 font-semibold text-sm px-5 py-3 rounded-xl shadow-lg transition">
+                                <i class="fa-solid fa-table-list"></i> ดูรายการงบประมาณ
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Stats Cards -->
+                    <div id="kpi-cards" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5"></div>
+
+                    <!-- Plans + groups -->
+                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                        <div class="card p-6 xl:col-span-2">
+                            <div class="flex items-start justify-between mb-5 gap-3">
+                                <div>
+                                    <h3 class="card-title">งบประมาณรายจ่ายจำแนกตามแผนงาน</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">ปี 2570 เทียบกับประมาณการปี 2569 · คลิกเพื่อดูรายการ</p>
+                                </div>
+                                <span class="chip bg-slate-100 text-slate-600 shrink-0"><i class="fa-regular fa-calendar"></i> ปี 2570</span>
+                            </div>
+                            <div id="plan-bars" class="space-y-3.5"></div>
+                        </div>
+
+                        <div class="card p-6">
+                            <h3 class="card-title">จำแนกตามงบรายจ่าย</h3>
+                            <p class="text-xs text-slate-400 mt-0.5 mb-5">ตรวจทานกับคำแถลงงบประมาณ (หน้า 10)</p>
+                            <div id="group-donut" class="relative w-44 h-44 mx-auto rounded-full">
+                                <div class="absolute inset-6 bg-white rounded-full flex flex-col items-center justify-center">
+                                    <span class="font-display text-2xl font-semibold text-slate-900">45.3</span>
+                                    <span class="text-xs text-slate-400">ล้านบาท</span>
+                                </div>
+                            </div>
+                            <div id="group-legend" class="mt-6 space-y-2.5"></div>
+                        </div>
+                    </div>
+
+                    <!-- Revenue / trend / new projects -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        <div class="card p-6">
+                            <h3 class="card-title">โครงสร้างรายรับ ปี 2570</h3>
+                            <p class="text-xs text-slate-400 mt-0.5 mb-5">ประมาณการรายรับรวม <span id="rev-total" class="font-semibold text-slate-600"></span> บาท</p>
+                            <div id="rev-stack" class="flex h-4 rounded-full overflow-hidden bg-slate-100"></div>
+                            <div id="rev-legend" class="mt-5 space-y-3"></div>
+                            <div class="mt-5 flex items-start gap-2.5 text-xs text-amber-800 bg-amber-50 p-3 rounded-xl ring-1 ring-amber-100">
+                                <i class="fa-solid fa-lightbulb mt-0.5"></i>
+                                <p id="rev-insight"></p>
+                            </div>
+                        </div>
+
+                        <div class="card p-6">
+                            <h3 class="card-title">แนวโน้มงบประมาณรายจ่าย</h3>
+                            <p class="text-xs text-slate-400 mt-0.5 mb-5">รายจ่ายจริง ปี 2567–2568 · ประมาณการ ปี 2569–2570 (ล้านบาท)</p>
+                            <div id="trend-chart" class="h-48 flex items-end justify-around gap-3 border-b border-slate-200 px-2"></div>
+                            <div id="trend-labels" class="flex justify-around gap-3 px-2 mt-2 text-xs text-slate-500"></div>
+                            <div class="flex gap-4 mt-4 text-xs text-slate-500">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-brand-600"></span>รายจ่ายจริง</span>
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-brand-200"></span>ประมาณการ</span>
+                            </div>
+                        </div>
+
+                        <div class="card p-6 flex flex-col lg:col-span-2 xl:col-span-1">
+                            <div class="flex items-center justify-between mb-1">
+                                <h3 class="card-title">รายการใหม่ปี 2570</h3>
+                                <button onclick="openBudget({ sort: 'new' })" class="text-xs font-semibold text-brand-600 hover:text-brand-700">ดูทั้งหมด</button>
+                            </div>
+                            <p class="text-xs text-slate-400 mb-3">ไม่มีงบในปี 2569 · เรียงตามวงเงิน</p>
+                            <div id="new-items" class="space-y-1 flex-1"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 2. UPLOAD VIEW -->
+                <div id="view-upload" class="space-y-6 hidden">
+                    <div class="grid grid-cols-1 xl:grid-cols-5 gap-6">
+                        <div class="card p-6 lg:p-8 xl:col-span-3">
+                            <h3 class="card-title">อัพโหลดและแปลงไฟล์ข้อบัญญัติงบประมาณ</h3>
+                            <p class="text-sm text-slate-500 mt-1 mb-6">รองรับไฟล์ PDF จากระบบ e-LAAS (ข้อบัญญัติ/เทศบัญญัติงบประมาณรายจ่าย) ทั้งหน้าที่มีข้อความและหน้าสแกน ระบบจะแยก "รายงานประมาณการรายจ่าย" เป็นรายการและตรวจทานยอดรวมกับคำแถลงงบประมาณอัตโนมัติ</p>
+
+                            <label id="dropzone" class="group block border-2 border-dashed border-slate-300 hover:border-brand-500 rounded-2xl p-10 text-center transition cursor-pointer bg-slate-50/60 hover:bg-brand-50/40">
+                                <input id="file-input" type="file" accept=".pdf,.xlsx,.xls" class="hidden" onchange="handleFiles(this.files)">
+                                <div class="w-16 h-16 bg-gradient-to-br from-brand-500 to-teal-600 text-white rounded-2xl flex items-center justify-center mx-auto mb-4 text-2xl shadow-glow group-hover:scale-105 transition">
+                                    <i class="fa-solid fa-cloud-arrow-up"></i>
+                                </div>
+                                <h4 class="font-semibold text-sm text-slate-800">ลากไฟล์ PDF หรือ Excel มาวางที่นี่ หรือ <span class="text-brand-600 underline underline-offset-4">คลิกเพื่อเลือกไฟล์</span></h4>
+                                <p class="text-xs text-slate-500 mt-1.5">รองรับไฟล์ .pdf, .xlsx, .xls ขนาดไม่เกิน 50MB</p>
+                            </label>
+
+                            <div id="file-card" class="mt-4 flex items-center gap-3 p-3.5 rounded-xl ring-1 ring-slate-200 bg-white">
+                                <div class="w-10 h-10 shrink-0 rounded-xl bg-rose-50 text-rose-600 flex items-center justify-center"><i class="fa-solid fa-file-pdf"></i></div>
+                                <div class="min-w-0 flex-1">
+                                    <p id="file-name" class="text-sm font-semibold text-slate-800 truncate"></p>
+                                    <p id="file-meta" class="text-xs text-slate-400"></p>
+                                </div>
+                                <span class="chip bg-slate-100 text-slate-600 shrink-0">ไฟล์ตัวอย่าง</span>
+                            </div>
+
+                            <div class="mt-6 grid sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="label">ประเภทเอกสาร</label>
+                                    <div class="relative">
+                                        <select class="field appearance-none pr-10">
+                                            <option>ข้อบัญญัติงบประมาณรายจ่ายประจำปี</option>
+                                            <option>ข้อบัญญัติงบประมาณรายจ่ายเพิ่มเติม</option>
+                                            <option>งบทดลอง / รายงานการเบิกจ่าย (Excel)</option>
+                                            <option>ประกาศจัดซื้อจัดจ้าง</option>
+                                        </select>
+                                        <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="label">กองเจ้าของเอกสาร</label>
+                                    <div class="relative">
+                                        <select class="field appearance-none pr-10">
+                                            <option>กองคลัง</option>
+                                            <option>สำนักปลัด อบต.ปุโรง</option>
+                                            <option>กองช่าง</option>
+                                            <option>กองการศึกษา ศาสนาและวัฒนธรรม</option>
+                                            <option>กองสวัสดิการสังคม</option>
+                                        </select>
+                                        <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+                                    </div>
+                                </div>
+                            </div>
+                            <button id="process-btn" onclick="runPipeline()" class="btn-primary w-full mt-6 py-3.5">
+                                <i class="fa-solid fa-gear"></i> เริ่มประมวลผลและจัดเก็บ
+                            </button>
+                        </div>
+
+                        <!-- Pipeline -->
+                        <div class="card p-6 xl:col-span-2 flex flex-col">
+                            <h3 class="card-title">ขั้นตอนการแปลงข้อมูล</h3>
+                            <p class="text-xs text-slate-400 mt-0.5 mb-5">กด "เริ่มประมวลผล" เพื่อดูการทำงาน</p>
+                            <ol id="pipeline" class="space-y-4 flex-1"></ol>
+                            <div id="pipeline-result" class="hidden mt-5 p-4 rounded-xl bg-emerald-50 ring-1 ring-emerald-200">
+                                <p class="text-sm font-semibold text-emerald-800"><i class="fa-solid fa-circle-check mr-1.5"></i>แปลงข้อมูลสำเร็จ</p>
+                                <p id="pipeline-summary" class="text-xs text-emerald-700 mt-1 leading-relaxed"></p>
+                                <button onclick="switchTab('budget')" class="btn-primary w-full mt-3 py-2.5">ดูข้อมูลที่แปลงแล้ว <i class="fa-solid fa-arrow-right text-xs"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document map -->
+                    <div class="card p-6">
+                        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+                            <div>
+                                <h3 class="card-title">โครงสร้างเอกสารที่ตรวจพบ</h3>
+                                <p class="text-xs text-slate-400 mt-0.5" id="docmap-meta"></p>
+                            </div>
+                            <div class="flex gap-3 text-xs text-slate-500">
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-brand-500"></span>มีชั้นข้อความ</span>
+                                <span class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-sm bg-amber-400"></span>ภาพสแกน (OCR)</span>
+                            </div>
+                        </div>
+                        <div id="docmap-bar" class="flex h-3 rounded-full overflow-hidden gap-px bg-slate-100"></div>
+                        <div id="docmap-list" class="grid sm:grid-cols-2 xl:grid-cols-3 gap-2 mt-5"></div>
+                    </div>
+
+                    <!-- Upload History Table -->
+                    <div class="card overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <h3 class="card-title">ประวัติการอัพโหลดและแปลงข้อมูล</h3>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-sm">
+                                <thead class="text-xs uppercase tracking-wide text-slate-500 bg-slate-50/80">
+                                    <tr>
+                                        <th class="px-6 py-3 font-semibold">ชื่อไฟล์</th>
+                                        <th class="px-6 py-3 font-semibold">ประเภทเอกสาร</th>
+                                        <th class="px-6 py-3 font-semibold">กองสังกัด</th>
+                                        <th class="px-6 py-3 font-semibold">ผลการแปลง</th>
+                                        <th class="px-6 py-3 font-semibold text-right">จัดการ</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-slate-700">
+                                    <tr class="hover:bg-slate-50/70 transition">
+                                        <td class="px-6 py-4 font-medium text-slate-900 whitespace-nowrap"><i class="fa-solid fa-file-pdf text-rose-500 mr-2"></i><span id="hist-file"></span><p id="hist-meta" class="text-xs font-normal text-slate-400 mt-0.5 ml-6"></p></td>
+                                        <td class="px-6 py-4 whitespace-nowrap">ข้อบัญญัติงบประมาณรายจ่าย ปี 2570</td>
+                                        <td class="px-6 py-4 whitespace-nowrap">กองคลัง</td>
+                                        <td class="px-6 py-4"><span id="hist-result" class="chip bg-emerald-50 text-emerald-700 whitespace-nowrap"></span></td>
+                                        <td class="px-6 py-4 text-right"><button onclick="switchTab('budget')" class="btn-ghost text-brand-600 hover:text-brand-700"><i class="fa-regular fa-eye text-xs"></i> ดูข้อมูล</button></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3. BUDGET VIEW -->
+                <div id="view-budget" class="space-y-6 hidden">
+                    <!-- Sub tabs -->
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <div class="inline-flex bg-white ring-1 ring-slate-200 p-1 rounded-xl shadow-soft">
+                            <button onclick="switchBudgetTab('items')" id="btab-items" class="btab px-4 py-2 text-sm font-semibold rounded-lg">รายการรายจ่าย</button>
+                            <button onclick="switchBudgetTab('plans')" id="btab-plans" class="btab px-4 py-2 text-sm font-semibold rounded-lg">แผนงาน / งาน</button>
+                            <button onclick="switchBudgetTab('revenue')" id="btab-revenue" class="btab px-4 py-2 text-sm font-semibold rounded-lg">รายรับ</button>
+                        </div>
+                        <p class="text-xs text-slate-400"><i class="fa-solid fa-file-pdf text-rose-400 mr-1"></i>ที่มา: <span class="budget-source"></span></p>
+                    </div>
+
+                    <!-- Items -->
+                    <div id="bpanel-items" class="card overflow-hidden">
+                        <div class="p-5 border-b border-slate-100 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-[1fr_220px_180px_200px] gap-3">
+                            <div class="relative">
+                                <span class="absolute inset-y-0 left-0 pl-4 flex items-center text-slate-400"><i class="fa-solid fa-magnifying-glass text-xs"></i></span>
+                                <input id="f-search" oninput="renderItems()" type="text" class="field field-icon py-2.5" placeholder="ค้นหารายการ เช่น ถนน, คอมพิวเตอร์, เบี้ยยังชีพ">
+                            </div>
+                            <div class="relative">
+                                <select id="f-plan" onchange="renderItems()" class="field appearance-none pr-10 py-2.5"></select>
+                                <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+                            </div>
+                            <div class="relative">
+                                <select id="f-group" onchange="renderItems()" class="field appearance-none pr-10 py-2.5"></select>
+                                <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+                            </div>
+                            <div class="relative">
+                                <select id="f-sort" onchange="renderItems()" class="field appearance-none pr-10 py-2.5">
+                                    <option value="doc">เรียงตามเอกสาร</option>
+                                    <option value="amount">วงเงินปี 2570 มาก → น้อย</option>
+                                    <option value="change">เพิ่มขึ้นมากที่สุด</option>
+                                    <option value="new">รายการใหม่ปี 2570</option>
+                                </select>
+                                <span class="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 pointer-events-none"><i class="fa-solid fa-chevron-down text-xs"></i></span>
+                            </div>
+                        </div>
+                        <div id="items-summary" class="px-5 py-3 bg-slate-50/80 border-b border-slate-100 flex flex-wrap gap-x-6 gap-y-1 text-sm"></div>
+                        <div class="overflow-auto max-h-[calc(100vh-20rem)] min-h-[320px] scrollbar-thin">
+                            <table class="w-full text-sm">
+                                <thead class="sticky top-0 z-10 bg-white text-xs text-slate-500 shadow-[0_1px_0_#e2e8f0]">
+                                    <tr>
+                                        <th class="text-left px-5 py-3 font-semibold min-w-[280px]">รายการ</th>
+                                        <th class="text-right px-4 py-3 font-semibold whitespace-nowrap">จ่ายจริง 2567</th>
+                                        <th class="text-right px-4 py-3 font-semibold whitespace-nowrap">จ่ายจริง 2568</th>
+                                        <th class="text-right px-4 py-3 font-semibold whitespace-nowrap">ประมาณการ 2569</th>
+                                        <th class="text-right px-4 py-3 font-semibold whitespace-nowrap text-brand-700">ประมาณการ 2570</th>
+                                        <th class="text-right px-5 py-3 font-semibold whitespace-nowrap">เปลี่ยนแปลง</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="items-body" class="divide-y divide-slate-100"></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Plans -->
+                    <div id="bpanel-plans" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-5"></div>
+
+                    <!-- Revenue -->
+                    <div id="bpanel-revenue" class="hidden space-y-6">
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="rev-cards"></div>
+                        <div class="card overflow-hidden">
+                            <div class="px-6 py-4 border-b border-slate-100">
+                                <h3 class="card-title">ประมาณการรายรับ</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">จากคำแถลงประกอบงบประมาณ (หน้า 9 · ภาพสแกน)</p>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-sm">
+                                    <thead class="text-xs text-slate-500 bg-slate-50/80">
+                                        <tr>
+                                            <th class="text-left px-6 py-3 font-semibold">หมวดรายรับ</th>
+                                            <th class="text-right px-4 py-3 font-semibold whitespace-nowrap">รับจริง 2568</th>
+                                            <th class="text-right px-4 py-3 font-semibold whitespace-nowrap">ประมาณการ 2569</th>
+                                            <th class="text-right px-4 py-3 font-semibold whitespace-nowrap text-brand-700">ประมาณการ 2570</th>
+                                            <th class="text-right px-6 py-3 font-semibold">เปลี่ยนแปลง</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="rev-body" class="divide-y divide-slate-100"></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <!-- 4. ORC VIEW -->
+                <div id="view-orc" class="space-y-6 hidden">
+                    <div class="card p-6 lg:p-8">
+                        <h3 class="card-title">ตัวชี้วัดผลการปฏิบัติงาน (ORC - Operational Result Control)</h3>
+                        <p class="text-sm text-slate-500 mt-1">ผลการประเมินประสิทธิภาพและตัวชี้วัดตามแผนพัฒนาท้องถิ่นของ อบต.ปุโรง</p>
+                        <p class="mt-3 mb-8 inline-flex items-center gap-2 text-xs text-amber-800 bg-amber-50 ring-1 ring-amber-100 px-3 py-1.5 rounded-lg"><i class="fa-solid fa-circle-info"></i> ข้อมูลจำลอง — ไฟล์ข้อบัญญัติงบประมาณไม่มีข้อมูลตัวชี้วัด</p>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                            <div class="rounded-2xl ring-1 ring-slate-200 p-6 text-center hover:shadow-soft transition">
+                                <div class="relative w-32 h-32 mx-auto mb-4">
+                                    <svg viewBox="0 0 120 120" class="ring-progress w-32 h-32 -rotate-90">
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#f1f5f9" stroke-width="12"/>
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#10b981" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" data-value="92"/>
+                                </svg>
+                                    <p class="absolute inset-0 flex items-center justify-center font-display text-3xl font-semibold text-slate-900">92%</p>
+                                </div>
+                                <span class="chip bg-emerald-50 text-emerald-700">ผ่านดีมาก</span>
+                                <p class="text-sm font-medium text-slate-700 mt-3 leading-relaxed">1. การจัดบริการสาธารณะและความพึงพอใจประชาชน</p>
+                            </div>
+                            <div class="rounded-2xl ring-1 ring-slate-200 p-6 text-center hover:shadow-soft transition">
+                                <div class="relative w-32 h-32 mx-auto mb-4">
+                                    <svg viewBox="0 0 120 120" class="ring-progress w-32 h-32 -rotate-90">
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#f1f5f9" stroke-width="12"/>
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#2563eb" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" data-value="88"/>
+                                </svg>
+                                    <p class="absolute inset-0 flex items-center justify-center font-display text-3xl font-semibold text-slate-900">88%</p>
+                                </div>
+                                <span class="chip bg-blue-50 text-blue-700">ผ่านเกณฑ์</span>
+                                <p class="text-sm font-medium text-slate-700 mt-3 leading-relaxed">2. การบริหารจัดการงบประมาณและความโปร่งใส</p>
+                            </div>
+                            <div class="rounded-2xl ring-1 ring-slate-200 p-6 text-center hover:shadow-soft transition">
+                                <div class="relative w-32 h-32 mx-auto mb-4">
+                                    <svg viewBox="0 0 120 120" class="ring-progress w-32 h-32 -rotate-90">
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#f1f5f9" stroke-width="12"/>
+                                    <circle cx="60" cy="60" r="50" fill="none" stroke="#8b5cf6" stroke-width="12" stroke-linecap="round" pathLength="100" stroke-dasharray="100" stroke-dashoffset="100" data-value="85"/>
+                                </svg>
+                                    <p class="absolute inset-0 flex items-center justify-center font-display text-3xl font-semibold text-slate-900">85%</p>
+                                </div>
+                                <span class="chip bg-violet-50 text-violet-700">ผ่านเกณฑ์</span>
+                                <p class="text-sm font-medium text-slate-700 mt-3 leading-relaxed">3. โครงสร้างพื้นฐานและการซ่อมบำรุงในตำบลปุโรง</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 5. AI Q&A VIEW -->
+                <div id="view-ai" class="hidden">
+                    <div class="card flex flex-col h-[calc(100vh-6rem)] sm:h-[calc(100vh-7rem)] lg:h-[calc(100vh-8rem)] min-h-[480px] overflow-hidden">
+                        <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="relative w-10 h-10 rounded-xl bg-gradient-to-br from-brand-500 to-teal-600 text-white flex items-center justify-center shadow-glow">
+                                    <i class="fa-solid fa-robot"></i>
+                                    <span class="absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full bg-emerald-400 ring-2 ring-white"></span>
+                                </div>
+                                <div>
+                                    <h3 class="font-semibold text-sm text-slate-900">ผู้ช่วยอัจฉริยะ อบต.ปุโรง</h3>
+                                    <span class="text-xs text-slate-500">สืบค้นจากเอกสารภายในเครื่อง/ระบบ · Local RAG</span>
+                                </div>
+                            </div>
+                            <button onclick="resetChat()" class="btn-ghost" title="เริ่มบทสนทนาใหม่"><i class="fa-solid fa-rotate-right text-xs"></i><span class="hidden sm:inline">เริ่มใหม่</span></button>
+                        </div>
+                        <div id="chat-log" class="flex-1 p-5 overflow-y-auto space-y-4 bg-slate-50/60 text-sm scrollbar-thin"></div>
+                        <div class="p-4 border-t border-slate-100 bg-white">
+                            <div id="chat-suggestions" class="flex gap-2 overflow-x-auto pb-3 scrollbar-thin">
+                                <button onclick="sendChat(this.innerText)" class="shrink-0 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 ring-1 ring-brand-200 px-3 py-1.5 rounded-full transition">งบประมาณกองช่างปี 2570 มีเท่าไหร่?</button>
+                                <button onclick="sendChat(this.innerText)" class="shrink-0 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 ring-1 ring-brand-200 px-3 py-1.5 rounded-full transition">โครงการก่อสร้างปี 2570 มีอะไรบ้าง</button>
+                                <button onclick="sendChat(this.innerText)" class="shrink-0 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 ring-1 ring-brand-200 px-3 py-1.5 rounded-full transition">รายได้หลักของ อบต. มาจากไหน</button>
+                                <button onclick="sendChat(this.innerText)" class="shrink-0 text-xs font-medium text-brand-700 bg-brand-50 hover:bg-brand-100 ring-1 ring-brand-200 px-3 py-1.5 rounded-full transition">เบี้ยยังชีพผู้สูงอายุตั้งไว้เท่าไหร่</button>
+                            </div>
+                            <form onsubmit="event.preventDefault(); sendChat(document.getElementById('chat-input').value)" class="flex items-center gap-2 bg-slate-50 ring-1 ring-slate-200 focus-within:ring-2 focus-within:ring-brand-500 rounded-2xl p-1.5 transition">
+                                <input id="chat-input" type="text" class="flex-1 px-3 py-2 text-sm bg-transparent focus:outline-none" placeholder="พิมพ์คำถาม เช่น งบซ่อมแซมถนน, ค่าวัสดุคอมพิวเตอร์, งบการศึกษา">
+                                <button type="submit" class="w-10 h-10 shrink-0 rounded-xl bg-gradient-to-br from-brand-600 to-teal-600 text-white hover:opacity-90 transition shadow-glow" aria-label="ส่ง"><i class="fa-solid fa-paper-plane text-sm"></i></button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 6. ORG STRUCTURE VIEW -->
+                <div id="view-org" class="space-y-6 hidden">
+                    <div class="card p-6 lg:p-8">
+                        <div class="flex items-center gap-4 mb-8">
+                            <img src="logo.png" alt="" class="w-14 h-14 rounded-full shadow ring-4 ring-brand-50">
+                            <div>
+                                <h3 class="card-title">โครงสร้างองค์กร องค์การบริหารส่วนตำบลปุโรง</h3>
+                                <p class="text-sm text-slate-500 mt-0.5">อำเภอกรงปินัง จังหวัดยะลา</p>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                            <div class="group p-5 rounded-2xl ring-1 ring-slate-200 hover:ring-blue-300 hover:shadow-soft hover:-translate-y-0.5 transition bg-white">
+                                <div class="kpi-icon bg-blue-50 text-blue-600 group-hover:bg-blue-600 group-hover:text-white transition"><i class="fa-solid fa-folder-open"></i></div>
+                                <h4 class="font-semibold text-sm text-slate-900 mt-4">สำนักปลัด อบต.</h4>
+                                <p class="text-sm text-slate-500 mt-1 leading-relaxed">งานบริหารงานทั่วไป งานนิติการ งานป้องกันและบรรเทาสาธารณภัย</p>
+                            </div>
+                            <div class="group p-5 rounded-2xl ring-1 ring-slate-200 hover:ring-emerald-300 hover:shadow-soft hover:-translate-y-0.5 transition bg-white">
+                                <div class="kpi-icon bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition"><i class="fa-solid fa-coins"></i></div>
+                                <h4 class="font-semibold text-sm text-slate-900 mt-4">กองคลัง</h4>
+                                <p class="text-sm text-slate-500 mt-1 leading-relaxed">งานการเงิน งานบัญชี งานจัดเก็บรายได้ และงานพัสดุ</p>
+                            </div>
+                            <div class="group p-5 rounded-2xl ring-1 ring-slate-200 hover:ring-violet-300 hover:shadow-soft hover:-translate-y-0.5 transition bg-white">
+                                <div class="kpi-icon bg-violet-50 text-violet-600 group-hover:bg-violet-600 group-hover:text-white transition"><i class="fa-solid fa-helmet-safety"></i></div>
+                                <h4 class="font-semibold text-sm text-slate-900 mt-4">กองช่าง</h4>
+                                <p class="text-sm text-slate-500 mt-1 leading-relaxed">งานวิศวกรรม งานสถาปัตยกรรม และงานสาธารณูปโภค</p>
+                            </div>
+                            <div class="group p-5 rounded-2xl ring-1 ring-slate-200 hover:ring-amber-300 hover:shadow-soft hover:-translate-y-0.5 transition bg-white">
+                                <div class="kpi-icon bg-amber-50 text-amber-600 group-hover:bg-amber-500 group-hover:text-white transition"><i class="fa-solid fa-hands-holding-child"></i></div>
+                                <h4 class="font-semibold text-sm text-slate-900 mt-4">กองสวัสดิการสังคม</h4>
+                                <p class="text-sm text-slate-500 mt-1 leading-relaxed">งานสวัสดิการและพัฒนาชุมชน งานสังคมสงเคราะห์</p>
+                            </div>
+                            <div class="group p-5 rounded-2xl ring-1 ring-slate-200 hover:ring-rose-300 hover:shadow-soft hover:-translate-y-0.5 transition bg-white">
+                                <div class="kpi-icon bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition"><i class="fa-solid fa-graduation-cap"></i></div>
+                                <h4 class="font-semibold text-sm text-slate-900 mt-4">กองการศึกษา ศาสนาและวัฒนธรรม</h4>
+                                <p class="text-sm text-slate-500 mt-1 leading-relaxed">งานส่งเสริมการศึกษา ศูนย์พัฒนาเด็กเล็ก</p>
+                            </div>
+                            <div class="group p-5 rounded-2xl ring-1 ring-slate-200 hover:ring-cyan-300 hover:shadow-soft hover:-translate-y-0.5 transition bg-white">
+                                <div class="kpi-icon bg-cyan-50 text-cyan-600 group-hover:bg-cyan-600 group-hover:text-white transition"><i class="fa-solid fa-shield-halved"></i></div>
+                                <h4 class="font-semibold text-sm text-slate-900 mt-4">หน่วยตรวจสอบภายใน</h4>
+                                <p class="text-sm text-slate-500 mt-1 leading-relaxed">งานตรวจสอบทานระบบการเงินและบัญชีภายใน</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-[60] pointer-events-none opacity-0 translate-y-4 transition duration-300">
+        <div class="flex items-center gap-3 bg-slate-900 text-white text-sm px-5 py-3.5 rounded-2xl shadow-2xl max-w-[calc(100vw-2rem)]">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            <span id="toast-text"></span>
+        </div>
+    </div>
+
+    <!-- Script สำหรับควบคุมการทำงาน -->
+    <script>
+        function switchAuthTab(tab) {
+            const isLogin = tab === 'login';
+            document.getElementById('form-login').classList.toggle('hidden', !isLogin);
+            document.getElementById('form-register').classList.toggle('hidden', isLogin);
+            document.getElementById('tab-login').classList.toggle('active', isLogin);
+            document.getElementById('tab-register').classList.toggle('active', !isLogin);
+            document.getElementById('auth-tab-indicator').style.transform = isLogin ? 'translateX(0)' : 'translateX(100%)';
+            document.getElementById(isLogin ? 'form-login' : 'form-register').classList.add('fade-in');
+        }
+
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const show = input.type === 'password';
+            input.type = show ? 'text' : 'password';
+            btn.querySelector('i').className = (show ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye') + ' text-sm';
+        }
+
+        function handleLogin(event) {
+            event.preventDefault();
+            const role = document.getElementById('login-role').value;
+            document.getElementById('user-display-name').innerText = role;
+            document.getElementById('welcome-name').innerText = role;
+
+            document.getElementById('auth-container').classList.add('hidden');
+            document.getElementById('main-portal').classList.remove('hidden');
+            animateCharts(document.getElementById('view-dashboard'));
+        }
+
+        function handleRegister(event) {
+            event.preventDefault();
+            showToast('ลงทะเบียนสำเร็จ! กรุณาเข้าสู่ระบบ');
+            event.target.reset();
+            switchAuthTab('login');
+        }
+
+        function handleLogout() {
+            document.getElementById('main-portal').classList.add('hidden');
+            document.getElementById('auth-container').classList.remove('hidden');
+        }
+
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const backdrop = document.getElementById('sidebar-backdrop');
+            sidebar.classList.toggle('-translate-x-full');
+            backdrop.classList.toggle('hidden');
+        }
+
+        const viewTitles = {
+            'dashboard': ['แดชบอร์ดภาพรวม (Executive Summary)', 'แดชบอร์ด'],
+            'upload': ['ระบบอัพโหลดและแปลงไฟล์ (PDF / Excel)', 'อัพโหลดไฟล์'],
+            'budget': ['ข้อมูลงบประมาณรายจ่าย ประจำปี 2570', 'งบประมาณ'],
+            'orc': ['ตัวชี้วัดผลการปฏิบัติงาน (ORC)', 'ตัวชี้วัด ORC'],
+            'ai': ['ผู้ช่วยอัจฉริยะ ถาม-ตอบ เอกสาร (AI Q&A)', 'ถาม-ตอบ AI'],
+            'org': ['โครงสร้างกอง/ฝ่าย องค์การบริหารส่วนตำบลปุโรง', 'โครงสร้างองค์กร']
+        };
+
+        function switchTab(tabId) {
+            Object.keys(viewTitles).forEach(t => {
+                document.getElementById('view-' + t).classList.add('hidden');
+                document.getElementById('nav-' + t).classList.remove('active');
+            });
+            const view = document.getElementById('view-' + tabId);
+            view.classList.remove('hidden');
+            view.classList.remove('fade-in'); void view.offsetWidth; view.classList.add('fade-in');
+            document.getElementById('nav-' + tabId).classList.add('active');
+            document.getElementById('page-title').innerText = viewTitles[tabId][0];
+            document.getElementById('page-crumb').innerText = viewTitles[tabId][1];
+            animateCharts(view);
+            window.scrollTo({ top: 0 });
+
+            if (window.innerWidth < 768 && !document.getElementById('sidebar').classList.contains('-translate-x-full')) {
+                toggleSidebar();
+            }
+        }
+
+        // อนิเมชันแท่งกราฟและวงแหวนเมื่อเปิดหน้า
+        function animateCharts(scope) {
+            const bars = scope.querySelectorAll('.bar-fill[data-width]');
+            const rings = scope.querySelectorAll('.ring-progress [data-value]');
+            bars.forEach(b => b.style.width = '0');
+            rings.forEach(r => r.style.strokeDashoffset = 100);
+            requestAnimationFrame(() => requestAnimationFrame(() => {
+                bars.forEach(b => b.style.width = b.dataset.width);
+                rings.forEach(r => r.style.strokeDashoffset = 100 - Number(r.dataset.value));
+            }));
+        }
+
+        // Toast แจ้งเตือนแทน alert()
+        let toastTimer;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-text').innerText = message;
+            toast.classList.remove('opacity-0', 'translate-y-4');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(() => toast.classList.add('opacity-0', 'translate-y-4'), 3200);
+        }
+
+        // ==================== ข้อมูลงบประมาณ (จาก data/budget_2570.js) ====================
+        const D = window.BUDGET_DATA;
+        const S = D.summary;
+        const PLAN_COLORS = ['#2563eb', '#0d9488', '#7c3aed', '#db2777', '#f59e0b', '#16a34a', '#0891b2', '#ea580c', '#65a30d', '#64748b'];
+        const GROUP_COLORS = { 'งบบุคลากร': '#2563eb', 'งบดำเนินงาน': '#10b981', 'งบกลาง': '#64748b', 'งบลงทุน': '#f59e0b', 'งบเงินอุดหนุน': '#8b5cf6', 'งบรายจ่ายอื่น': '#ec4899' };
+        const planColor = name => PLAN_COLORS[D.plans.findIndex(p => p.name === name) % PLAN_COLORS.length];
+        const shortPlan = name => (name || '').replace(/^แผนงาน/, '');
+
+        const fmt = (n, d = 0) => Number(n || 0).toLocaleString('th-TH', { minimumFractionDigits: d, maximumFractionDigits: 2 });
+        const fmtM = n => (n / 1e6).toLocaleString('th-TH', { maximumFractionDigits: 2 });
+        const pct = (a, b) => b ? (a - b) / b * 100 : null;
+        const sum = (arr, key) => arr.reduce((s, x) => s + (x[key] || 0), 0);
+        const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+        function changeBadge(now, prev) {
+            if (!prev && now) return '<span class="chip bg-sky-50 text-sky-700">ใหม่</span>';
+            if (prev && !now) return '<span class="chip bg-slate-100 text-slate-500">ไม่ตั้งงบ</span>';
+            const p = pct(now, prev);
+            if (p === null || Math.abs(p) < 0.005) return '<span class="text-xs text-slate-400">คงเดิม</span>';
+            const up = p > 0;
+            return `<span class="chip ${up ? 'bg-emerald-50 text-emerald-700' : 'bg-rose-50 text-rose-700'}"><i class="fa-solid fa-arrow-${up ? 'up' : 'down'} text-[10px]"></i>${fmt(Math.abs(p), 0)}%</span>`;
+        }
+
+        const TOTAL = sum(D.plans, 'y2570');
+        const TOTAL_PREV = sum(D.plans, 'y2569');
+        const REV_TOTAL = sum(S.revenue, 'y2570');
+
+        function renderDashboard() {
+            document.getElementById('doc-title').innerText = S.title;
+            document.getElementById('hero-total').innerText = fmt(TOTAL);
+            document.getElementById('hero-announced').innerText = S.announced;
+            document.getElementById('hero-effective').innerText = S.effective;
+            document.getElementById('hero-source').innerText = D.source.file;
+
+            const invest = D.items.filter(i => i.group === 'งบลงทุน' && i.y2570 > 0);
+            const kpis = [
+                { icon: 'fa-wallet', tone: 'blue', label: 'งบประมาณรายจ่ายปี 2570', value: fmt(TOTAL), unit: 'บาท',
+                  chip: `<i class="fa-solid fa-arrow-trend-up"></i> +${fmt(pct(TOTAL, TOTAL_PREV), 2)}%`, note: `จากประมาณการปี 2569 (${fmtM(TOTAL_PREV)} ล้านบาท)` },
+                { icon: 'fa-scale-balanced', tone: 'emerald', label: 'ประมาณการรายรับปี 2570', value: fmt(REV_TOTAL), unit: 'บาท',
+                  chip: REV_TOTAL === TOTAL ? 'งบสมดุล' : 'ไม่สมดุล', note: 'รายรับเท่ากับรายจ่าย' },
+                { icon: 'fa-helmet-safety', tone: 'amber', label: 'งบลงทุน (ครุภัณฑ์/ก่อสร้าง)', value: fmt(sum(invest, 'y2570')), unit: 'บาท',
+                  chip: `${invest.length} รายการ`, note: `${fmt(sum(invest, 'y2570') / TOTAL * 100, 1)}% ของงบประมาณทั้งหมด` },
+                { icon: 'fa-users', tone: 'violet', label: 'งบประมาณต่อประชากร', value: fmt(TOTAL / S.population.total), unit: 'บาท/คน',
+                  chip: `${fmt(S.population.total)} คน`, note: `พื้นที่ ${S.area_km2} ตร.กม. · ข้อมูล ณ ${S.population.as_of}` },
+            ];
+            document.getElementById('kpi-cards').innerHTML = kpis.map(k => `
+                <div class="card p-5 hover:-translate-y-0.5 hover:shadow-lg transition">
+                    <div class="flex items-start justify-between">
+                        <div class="kpi-icon bg-${k.tone}-50 text-${k.tone}-600"><i class="fa-solid ${k.icon}"></i></div>
+                        <span class="chip bg-${k.tone}-50 text-${k.tone}-700">${k.chip}</span>
+                    </div>
+                    <p class="text-sm text-slate-500 mt-4">${k.label}</p>
+                    <h3 class="font-display text-2xl font-semibold text-slate-900 mt-0.5 tabular-nums">${k.value} <span class="text-sm font-normal text-slate-400">${k.unit}</span></h3>
+                    <p class="text-xs text-slate-400 mt-1">${k.note}</p>
+                </div>`).join('');
+
+            // แผนงาน
+            const plans = [...D.plans].sort((a, b) => b.y2570 - a.y2570);
+            const maxPlan = plans[0].y2570;
+            document.getElementById('plan-bars').innerHTML = plans.map(p => `
+                <button onclick="openBudget({ plan: '${esc(p.name)}' })" class="block w-full text-left group">
+                    <div class="flex items-center justify-between gap-3 text-sm mb-1.5">
+                        <span class="flex items-center gap-2 text-slate-700 group-hover:text-slate-900 truncate"><span class="w-2.5 h-2.5 rounded-full shrink-0" style="background:${planColor(p.name)}"></span>${esc(shortPlan(p.name))}</span>
+                        <span class="flex items-center gap-2 shrink-0"><span class="font-semibold text-slate-900 tabular-nums">${fmt(p.y2570)}</span>${changeBadge(p.y2570, p.y2569)}</span>
+                    </div>
+                    <div class="bar-track h-2"><div class="bar-fill" data-width="${p.y2570 / maxPlan * 100}%" style="width:0;background:${planColor(p.name)}"></div></div>
+                </button>`).join('');
+
+            // งบรายจ่าย (donut) + ตรวจทานกับหน้า 10
+            const groups = [...S.expenditure_by_group].sort((a, b) => b.y2570 - a.y2570);
+            let acc = 0;
+            document.getElementById('group-donut').style.background = 'conic-gradient(' + groups.map(g => {
+                const from = acc; acc += g.y2570 / TOTAL * 100;
+                return `${GROUP_COLORS[g.name]} ${from}% ${acc}%`;
+            }).join(',') + ')';
+            document.getElementById('group-legend').innerHTML = groups.map(g => {
+                const extracted = D.groups[g.name] || 0;
+                const ok = Math.abs(extracted - g.y2570) < 1;
+                return `<div class="flex items-center justify-between text-sm gap-2">
+                    <span class="flex items-center gap-2 text-slate-600"><span class="w-2.5 h-2.5 rounded-full" style="background:${GROUP_COLORS[g.name]}"></span>${g.name}</span>
+                    <span class="flex items-center gap-2 tabular-nums"><span class="font-semibold text-slate-900">${fmtM(g.y2570)}</span><span class="text-slate-400 w-11 text-right">${fmt(g.y2570 / TOTAL * 100, 1)}%</span>
+                    <i class="fa-solid ${ok ? 'fa-circle-check text-emerald-500' : 'fa-triangle-exclamation text-amber-500'} text-xs" title="${ok ? 'ยอดรวมรายการตรงกับคำแถลงงบประมาณ' : 'ยอดไม่ตรง: ' + fmt(extracted)}"></i></span>
+                </div>`;
+            }).join('');
+
+            // รายรับ
+            const revGroups = {};
+            S.revenue.forEach(r => revGroups[r.group] = (revGroups[r.group] || 0) + r.y2570);
+            const revColors = ['#f59e0b', '#2563eb', '#10b981'];
+            const revEntries = Object.entries(revGroups);
+            document.getElementById('rev-total').innerText = fmt(REV_TOTAL);
+            document.getElementById('rev-stack').innerHTML = revEntries.map(([g, v], i) =>
+                `<div class="bar-fill rounded-none" data-width="${v / REV_TOTAL * 100}%" style="width:0;background:${revColors[i]}" title="${g}"></div>`).join('');
+            document.getElementById('rev-legend').innerHTML = revEntries.map(([g, v], i) => `
+                <div class="flex items-center justify-between text-sm">
+                    <span class="flex items-center gap-2 text-slate-600"><span class="w-2.5 h-2.5 rounded-full" style="background:${revColors[i]}"></span>${g}</span>
+                    <span class="tabular-nums"><span class="font-semibold text-slate-900">${fmt(v)}</span> <span class="text-slate-400">(${fmt(v / REV_TOTAL * 100, 1)}%)</span></span>
+                </div>`).join('');
+            const own = revGroups['รายได้จัดเก็บเอง'] || 0;
+            document.getElementById('rev-insight').innerText =
+                `รายได้จัดเก็บเองคิดเป็นเพียง ${fmt(own / REV_TOTAL * 100, 2)}% ของรายรับทั้งหมด รายรับเกือบทั้งหมดมาจากภาษีจัดสรรและเงินอุดหนุนจากรัฐบาล`;
+
+            // แนวโน้ม
+            const trend = [
+                { y: '2567', v: sum(D.plans, 'y2567'), actual: true },
+                { y: '2568', v: sum(D.plans, 'y2568'), actual: true },
+                { y: '2569', v: TOTAL_PREV, actual: false },
+                { y: '2570', v: TOTAL, actual: false },
+            ];
+            const maxT = Math.max(...trend.map(t => t.v));
+            document.getElementById('trend-chart').innerHTML = trend.map(t => `
+                <div class="flex-1 max-w-16 h-full flex flex-col justify-end items-center gap-1">
+                    <span class="text-xs font-semibold text-slate-700 tabular-nums">${fmtM(t.v)}</span>
+                    <div class="w-full rounded-t-lg transition-all duration-1000 ${t.actual ? 'bg-brand-600' : 'bg-brand-200'}" style="height:${t.v / maxT * 85}%"></div>
+                </div>`).join('');
+            document.getElementById('trend-labels').innerHTML = trend.map(t => `<span class="flex-1 max-w-16 text-center">${t.y}</span>`).join('');
+
+            // รายการใหม่
+            const fresh = D.items.filter(i => !i.y2569 && i.y2570 > 0).sort((a, b) => b.y2570 - a.y2570).slice(0, 6);
+            document.getElementById('new-items').innerHTML = fresh.map(i => `
+                <div class="flex gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition">
+                    <div class="w-1 shrink-0 rounded-full" style="background:${planColor(i.plan)}"></div>
+                    <div class="min-w-0 flex-1">
+                        <p class="text-sm font-medium text-slate-800 line-clamp-2 leading-snug">${esc(i.name)}</p>
+                        <p class="text-xs text-slate-400 mt-0.5">${esc(shortPlan(i.plan))} · หน้า ${i.page}</p>
+                    </div>
+                    <span class="text-sm font-semibold text-slate-900 tabular-nums shrink-0">${fmt(i.y2570)}</span>
+                </div>`).join('');
+        }
+
+        // ==================== หน้าข้อมูลงบประมาณ ====================
+        function switchBudgetTab(tab) {
+            ['items', 'plans', 'revenue'].forEach(t => {
+                document.getElementById('bpanel-' + t).classList.toggle('hidden', t !== tab);
+                const b = document.getElementById('btab-' + t);
+                b.className = 'btab px-4 py-2 text-sm font-semibold rounded-lg transition ' +
+                    (t === tab ? 'bg-brand-600 text-white shadow' : 'text-slate-500 hover:text-slate-800');
+            });
+            animateCharts(document.getElementById('bpanel-' + tab));
+        }
+
+        function openBudget({ plan = '', group = '', search = '', sort = 'doc' } = {}) {
+            document.getElementById('f-plan').value = plan;
+            document.getElementById('f-group').value = group;
+            document.getElementById('f-search').value = search;
+            document.getElementById('f-sort').value = sort;
+            renderItems();
+            switchTab('budget');
+            switchBudgetTab('items');
+        }
+
+        function initBudget() {
+            document.querySelectorAll('.budget-source').forEach(el => el.innerText = `${D.source.file} หน้า ${D.source.report_pages.join('–')}`);
+            document.getElementById('f-plan').innerHTML = '<option value="">ทุกแผนงาน</option>' +
+                D.plans.map(p => `<option value="${esc(p.name)}">${esc(shortPlan(p.name))}</option>`).join('');
+            document.getElementById('f-group').innerHTML = '<option value="">ทุกงบรายจ่าย</option>' +
+                Object.keys(D.groups).map(g => `<option>${g}</option>`).join('');
+
+            // แผนงาน / งาน
+            document.getElementById('bpanel-plans').innerHTML = D.plans.map(p => `
+                <div class="card p-5">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="flex items-center gap-3 min-w-0">
+                            <div class="w-1.5 h-10 rounded-full shrink-0" style="background:${planColor(p.name)}"></div>
+                            <div class="min-w-0">
+                                <h4 class="font-semibold text-slate-900 truncate">${esc(p.name)}</h4>
+                                <p class="text-xs text-slate-400">${fmt(p.y2570 / TOTAL * 100, 1)}% ของงบทั้งหมด</p>
+                            </div>
+                        </div>
+                        <div class="text-right shrink-0">
+                            <p class="font-display text-lg font-semibold text-slate-900 tabular-nums">${fmt(p.y2570)}</p>
+                            ${changeBadge(p.y2570, p.y2569)}
+                        </div>
+                    </div>
+                    <div class="mt-4 space-y-2.5">
+                        ${p.works.map(w => `
+                            <button onclick="openBudget({ plan: '${esc(p.name)}', search: '' })" class="block w-full text-left">
+                                <div class="flex justify-between text-sm mb-1 gap-3"><span class="text-slate-600 truncate">${esc(w.name)}</span><span class="tabular-nums text-slate-900 font-medium shrink-0">${fmt(w.y2570)}</span></div>
+                                <div class="bar-track h-1.5"><div class="bar-fill" data-width="${p.y2570 ? w.y2570 / p.y2570 * 100 : 0}%" style="width:0;background:${planColor(p.name)}"></div></div>
+                            </button>`).join('')}
+                    </div>
+                </div>`).join('');
+
+            // รายรับ
+            const revGroups = {};
+            S.revenue.forEach(r => {
+                const g = revGroups[r.group] || (revGroups[r.group] = { y2568: 0, y2569: 0, y2570: 0 });
+                ['y2568', 'y2569', 'y2570'].forEach(k => g[k] += r[k]);
+            });
+            const tones = ['amber', 'blue', 'emerald'];
+            const icons = ['fa-coins', 'fa-building-columns', 'fa-hand-holding-dollar'];
+            document.getElementById('rev-cards').innerHTML = Object.entries(revGroups).map(([name, g], i) => `
+                <div class="card p-6">
+                    <div class="kpi-icon bg-${tones[i]}-50 text-${tones[i]}-600"><i class="fa-solid ${icons[i]}"></i></div>
+                    <p class="text-sm text-slate-500 mt-4">${name}</p>
+                    <h4 class="font-display text-2xl font-semibold text-slate-900 mt-0.5 tabular-nums">${fmt(g.y2570)} <span class="text-sm font-normal text-slate-400">บาท</span></h4>
+                    <p class="text-xs text-slate-400 mt-1 flex items-center gap-2">เทียบปี 2569 ${changeBadge(g.y2570, g.y2569)}</p>
+                </div>`).join('');
+            let lastGroup = '';
+            document.getElementById('rev-body').innerHTML = S.revenue.map(r => {
+                const head = r.group !== lastGroup ? `<tr class="bg-slate-50/60"><td colspan="5" class="px-6 py-2 text-xs font-semibold text-slate-500">${r.group}</td></tr>` : '';
+                lastGroup = r.group;
+                return head + `<tr class="hover:bg-slate-50/70">
+                    <td class="px-6 py-3 text-slate-800">${r.name}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-slate-500">${fmt(r.y2568, 2)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums text-slate-500">${fmt(r.y2569)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums font-semibold text-slate-900">${fmt(r.y2570)}</td>
+                    <td class="px-6 py-3 text-right">${changeBadge(r.y2570, r.y2569)}</td>
+                </tr>`;
+            }).join('') + `<tr class="bg-slate-50 font-semibold"><td class="px-6 py-3">รวมทั้งสิ้น</td>
+                <td class="px-4 py-3 text-right tabular-nums">${fmt(sum(S.revenue, 'y2568'), 2)}</td>
+                <td class="px-4 py-3 text-right tabular-nums">${fmt(sum(S.revenue, 'y2569'))}</td>
+                <td class="px-4 py-3 text-right tabular-nums text-brand-700">${fmt(REV_TOTAL)}</td>
+                <td class="px-6 py-3 text-right">${changeBadge(REV_TOTAL, sum(S.revenue, 'y2569'))}</td></tr>`;
+
+            switchBudgetTab('items');
+            renderItems();
+        }
+
+        function filteredItems() {
+            const q = document.getElementById('f-search').value.trim().toLowerCase();
+            const plan = document.getElementById('f-plan').value;
+            const group = document.getElementById('f-group').value;
+            const sort = document.getElementById('f-sort').value;
+            let rows = D.items.filter(i =>
+                (!plan || i.plan === plan) && (!group || i.group === group) &&
+                (!q || [i.name, i.category, i.work].join(' ').toLowerCase().includes(q)));
+            if (sort === 'amount') rows = rows.sort((a, b) => b.y2570 - a.y2570);
+            if (sort === 'change') rows = rows.filter(i => i.y2569 > 0).sort((a, b) => (b.y2570 - b.y2569) - (a.y2570 - a.y2569));
+            if (sort === 'new') rows = rows.filter(i => !i.y2569 && i.y2570 > 0).sort((a, b) => b.y2570 - a.y2570);
+            return rows;
+        }
+
+        function renderItems() {
+            const rows = filteredItems();
+            const s70 = sum(rows, 'y2570'), s69 = sum(rows, 'y2569');
+            document.getElementById('items-summary').innerHTML = `
+                <span class="text-slate-500">พบ <b class="text-slate-900">${fmt(rows.length)}</b> รายการ</span>
+                <span class="text-slate-500">รวมปี 2570 <b class="text-brand-700 tabular-nums">${fmt(s70)}</b> บาท</span>
+                <span class="text-slate-500">ปี 2569 <b class="text-slate-700 tabular-nums">${fmt(s69, 2)}</b> บาท</span>
+                <span>${changeBadge(s70, s69)}</span>`;
+            document.getElementById('items-body').innerHTML = rows.length ? rows.map(i => `
+                <tr class="hover:bg-slate-50/70 align-top ${i.y2570 ? '' : 'text-slate-400'}">
+                    <td class="px-5 py-3">
+                        <p class="font-medium ${i.y2570 ? 'text-slate-800' : 'text-slate-400'} leading-snug">${esc(i.name)}</p>
+                        <p class="text-xs text-slate-400 mt-0.5 flex flex-wrap items-center gap-x-1.5">
+                            <span class="w-2 h-2 rounded-full inline-block" style="background:${planColor(i.plan)}"></span>${esc(shortPlan(i.plan))}
+                            <span>›</span>${esc(i.group || '')}${i.category ? ' › ' + esc(i.category) : ''}
+                            <span class="ml-1 px-1.5 rounded bg-slate-100 text-slate-500">หน้า ${i.page}</span>
+                        </p>
+                    </td>
+                    <td class="px-4 py-3 text-right tabular-nums whitespace-nowrap text-slate-500">${fmt(i.y2567, 2)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums whitespace-nowrap text-slate-500">${fmt(i.y2568, 2)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums whitespace-nowrap text-slate-600">${fmt(i.y2569)}</td>
+                    <td class="px-4 py-3 text-right tabular-nums whitespace-nowrap font-semibold ${i.y2570 ? 'text-slate-900' : ''}">${fmt(i.y2570)}</td>
+                    <td class="px-5 py-3 text-right whitespace-nowrap">${changeBadge(i.y2570, i.y2569)}</td>
+                </tr>`).join('')
+                : '<tr><td colspan="6" class="px-5 py-16 text-center text-slate-400"><i class="fa-regular fa-folder-open text-2xl mb-2 block"></i>ไม่พบรายการที่ตรงกับเงื่อนไข</td></tr>';
+        }
+
+        // ค้นหาจากแถบด้านบน
+        document.getElementById('global-search').addEventListener('keydown', e => {
+            if (e.key === 'Enter') openBudget({ search: e.target.value.trim() });
+        });
+
+        // ==================== อัพโหลด & แปลงไฟล์ ====================
+        const SAMPLE_FILE = { name: D.source.file, size: 37778878 };
+        let uploadFile = SAMPLE_FILE;
+
+        function initUpload() {
+            setFileCard(SAMPLE_FILE);
+            const imagePages = D.source.pages - D.source.text_pages;
+            document.getElementById('docmap-meta').innerText =
+                `${D.source.pages} หน้า · มีชั้นข้อความ ${D.source.text_pages} หน้า · ภาพสแกน ${imagePages} หน้า`;
+            const span = s => { const [a, b] = s.pages.split('-').map(Number); return (b || a) - a + 1; };
+            document.getElementById('docmap-bar').innerHTML = S.sections.map(s =>
+                `<div style="flex:${span(s)}" class="${s.kind === 'text' ? 'bg-brand-500' : 'bg-amber-400'}" title="หน้า ${s.pages}: ${s.name}"></div>`).join('');
+            document.getElementById('docmap-list').innerHTML = S.sections.map(s => `
+                <div class="flex items-center gap-3 p-2.5 rounded-xl ring-1 ring-slate-100 ${s.pages === D.source.report_pages.join('-') ? 'bg-brand-50/60 ring-brand-200' : ''}">
+                    <span class="w-14 shrink-0 text-center text-xs font-semibold px-1.5 py-1 rounded-md ${s.kind === 'text' ? 'bg-brand-100 text-brand-800' : 'bg-amber-100 text-amber-800'}">${s.pages}</span>
+                    <span class="text-sm text-slate-700 truncate">${s.name}</span>
+                </div>`).join('');
+            document.getElementById('hist-file').innerText = SAMPLE_FILE.name;
+            document.getElementById('hist-meta').innerText = `${fmt(SAMPLE_FILE.size / 1048576, 1)} MB · ${D.source.pages} หน้า`;
+            document.getElementById('hist-result').innerHTML = `<i class="fa-solid fa-circle-check"></i> ${D.items.length} รายการ · ยอดตรง`;
+            renderPipeline(-1);
+        }
+
+        function setFileCard(f) {
+            document.getElementById('file-name').innerText = f.name;
+            document.getElementById('file-meta').innerText = `${fmt(f.size / 1048576, 1)} MB` + (f === SAMPLE_FILE ? ` · ${D.source.pages} หน้า` : '');
+        }
+
+        function handleFiles(files) {
+            if (!files || !files.length) return;
+            uploadFile = files[0];
+            setFileCard(uploadFile);
+            showToast('เลือกไฟล์แล้ว — โหมดสาธิตจะแสดงผลจากไฟล์ตัวอย่าง');
+        }
+        const dropzone = document.getElementById('dropzone');
+        ['dragenter', 'dragover'].forEach(ev => dropzone.addEventListener(ev, e => {
+            e.preventDefault();
+            dropzone.classList.add('border-brand-500', 'bg-brand-50/40');
+        }));
+        ['dragleave', 'drop'].forEach(ev => dropzone.addEventListener(ev, e => {
+            e.preventDefault();
+            dropzone.classList.remove('border-brand-500', 'bg-brand-50/40');
+        }));
+        dropzone.addEventListener('drop', e => handleFiles(e.dataTransfer.files));
+
+        function pipelineSteps() {
+            const groupsOk = S.expenditure_by_group.every(g => Math.abs((D.groups[g.name] || 0) - g.y2570) < 1);
+            return [
+                { title: 'อ่านไฟล์ PDF', detail: `${D.source.pages} หน้า · ${fmt(SAMPLE_FILE.size / 1048576, 1)} MB` },
+                { title: 'จำแนกประเภทหน้า', detail: `ข้อความ ${D.source.text_pages} หน้า · ภาพสแกน ${D.source.pages - D.source.text_pages} หน้า` },
+                { title: 'OCR หน้าสแกน', detail: 'คำแถลงงบประมาณ รายรับ และรายจ่ายจำแนกตามงบ (หน้า 4–10)' },
+                { title: 'แยกตารางรายงานประมาณการรายจ่าย', detail: `หน้า ${D.source.report_pages.join('–')} → ${D.plans.length} แผนงาน · ${D.items.length} รายการ` },
+                { title: 'ตรวจทานยอดรวม', detail: `รวมรายการ ${fmt(sum(D.items, 'y2570'))} บาท ${groupsOk ? '= คำแถลงงบประมาณ ✓' : '≠ คำแถลงงบประมาณ'}` },
+                { title: 'บันทึกลงฐานข้อมูล', detail: 'อัปเดตแดชบอร์ด ข้อมูลงบประมาณ และคลังความรู้ AI' },
+            ];
+        }
+
+        function renderPipeline(active) {
+            document.getElementById('pipeline').innerHTML = pipelineSteps().map((s, i) => {
+                const done = i < active, run = i === active;
+                return `<li class="flex gap-3">
+                    <span class="w-7 h-7 shrink-0 rounded-full flex items-center justify-center text-xs font-semibold ${done ? 'bg-emerald-500 text-white' : run ? 'bg-brand-100 text-brand-700 ring-2 ring-brand-500' : 'bg-slate-100 text-slate-400'}">
+                        ${done ? '<i class="fa-solid fa-check"></i>' : run ? '<i class="fa-solid fa-spinner fa-spin"></i>' : i + 1}</span>
+                    <div class="min-w-0 pt-0.5">
+                        <p class="text-sm font-semibold ${done || run ? 'text-slate-900' : 'text-slate-400'}">${s.title}</p>
+                        <p class="text-xs ${done || run ? 'text-slate-500' : 'text-slate-300'} mt-0.5">${s.detail}</p>
+                    </div>
+                </li>`;
+            }).join('');
+        }
+
+        function runPipeline() {
+            const btn = document.getElementById('process-btn');
+            btn.disabled = true; btn.classList.add('opacity-60');
+            document.getElementById('pipeline-result').classList.add('hidden');
+            let step = 0;
+            const tick = () => {
+                renderPipeline(step);
+                if (step++ < pipelineSteps().length) return setTimeout(tick, 650);
+                btn.disabled = false; btn.classList.remove('opacity-60');
+                document.getElementById('pipeline-summary').innerText =
+                    `${D.items.length} รายการ จาก ${D.plans.length} แผนงาน · งบประมาณรวม ${fmt(TOTAL)} บาท · ยอดตรงกับคำแถลงงบประมาณทุกงบรายจ่าย` +
+                    (uploadFile !== SAMPLE_FILE ? ` (โหมดสาธิต: แสดงผลจากไฟล์ตัวอย่างแทน ${uploadFile.name})` : '');
+                document.getElementById('pipeline-result').classList.remove('hidden');
+                showToast('แปลงข้อมูลสำเร็จ! ข้อมูลถูกบันทึกลง Dashboard แล้ว');
+            };
+            tick();
+        }
+
+        // ==================== แชท AI (ค้นหาจากข้อมูลที่แปลงแล้ว) ====================
+        const chatLog = document.getElementById('chat-log');
+        const greeting = `สวัสดีครับ! ผมคือผู้ช่วยอัจฉริยะของ อบต.ปุโรง ตอนนี้อ่าน "${S.title}" (${D.items.length} รายการ) แล้ว ถามเรื่องงบประมาณ แผนงาน โครงการ หรือรายรับได้เลยครับ`;
+
+        // ชื่อกอง/คำเรียกทั่วไป -> แผนงานหรืองานในเอกสาร
+        const ALIASES = [
+            [/กองช่าง|โยธา/, { plan: 'แผนงานอุตสาหกรรมและการโยธา' }],
+            [/กองคลัง|การคลัง|งานคลัง/, { work: 'งานบริหารงานคลัง' }],
+            [/การศึกษา|โรงเรียน|ศูนย์พัฒนาเด็ก/, { plan: 'แผนงานการศึกษา' }],
+            [/สาธารณสุข/, { plan: 'แผนงานสาธารณสุข' }],
+            [/สวัสดิการ|สังคมสงเคราะห์/, { plan: 'แผนงานสังคมสงเคราะห์' }],
+            [/ชุมชน/, { plan: 'แผนงานสร้างความเข้มแข็งของชุมชน' }],
+            [/ศาสนา|วัฒนธรรม|กีฬา|นันทนาการ/, { plan: 'แผนงานการศาสนา วัฒนธรรม และนันทนาการ' }],
+            [/เกษตร/, { plan: 'แผนงานการเกษตร' }],
+            [/ป้องกัน|ภัย|ความสงบ|อปพร/, { plan: 'แผนงานการรักษาความสงบภายใน' }],
+            [/สำนักปลัด|บริหารงานทั่วไป|บริหารทั่วไป/, { plan: 'แผนงานบริหารงานทั่วไป' }],
+            [/งบกลาง/, { plan: 'แผนงานงบกลาง' }],
+        ];
+        const STOP = new Set(['งบ', 'งบประมาณ', 'ปี', 'มี', 'เท่าไหร่', 'เท่าไร', 'อะไร', 'บ้าง', 'ไหม', 'ครับ', 'ค่ะ', 'คะ', 'ของ', 'ที่', 'ใน', 'และ', 'ได้', 'ตั้ง', 'ไว้', 'ให้', 'การ', 'กี่', 'บาท', 'อบต', 'ปุโรง', 'รายการ', 'จำนวน', 'ทั้งหมด']);
+        const segmenter = window.Intl && Intl.Segmenter ? new Intl.Segmenter('th', { granularity: 'word' }) : null;
+        const words = text => (segmenter ? [...segmenter.segment(text)].filter(s => s.isWordLike).map(s => s.segment) : text.split(/\s+/))
+            .filter(w => w.length > 1 && !STOP.has(w) && !/^\d+$/.test(w));
+
+        function itemLine(i) {
+            return `• ${i.name} — ${fmt(i.y2570)} บาท (${shortPlan(i.plan)}, หน้า ${i.page})`;
+        }
+
+        function answer(q) {
+            const refs = new Set();
+            const cite = list => list.forEach(i => refs.add(i.page));
+
+            if (/รายรับ|รายได้|ภาษี|อุดหนุน.*รัฐ/.test(q) && !/โครงการ/.test(q)) {
+                const lines = S.revenue.map(r => `• ${r.name} — ${fmt(r.y2570)} บาท`);
+                return { text: `ประมาณการรายรับปี 2570 รวม ${fmt(REV_TOTAL)} บาท แยกเป็น\n${lines.join('\n')}\n\nรายได้หลักมาจากภาษีจัดสรร (${fmt(23349100 / REV_TOTAL * 100, 1)}%) และเงินอุดหนุน (${fmt(21570000 / REV_TOTAL * 100, 1)}%) ส่วนรายได้จัดเก็บเองมีไม่ถึง 1%`, refs: ['หน้า 9'] };
+            }
+
+            const alias = ALIASES.find(([re]) => re.test(q));
+            const scope = alias ? alias[1] : null;
+            const inScope = i => !scope || (scope.plan ? i.plan === scope.plan : i.work === scope.work);
+
+            const isBuild = /ก่อสร้าง|ถนน|ประปา|ไฟฟ้า/.test(q);
+            if (isBuild || /โครงการ|มีอะไรบ้าง/.test(q)) {
+                let list = D.items.filter(i => inScope(i) && i.y2570 > 0 &&
+                    (isBuild ? /ก่อสร้าง|ปรับปรุงที่ดิน/.test(i.category || '') : i.name.includes('โครงการ')));
+                // ถ้าระบุคำเฉพาะ (เช่น ถนน, ไฟฟ้า) ให้กรองต่อ
+                const narrowed = list.filter(i => words(q).some(w => w !== 'โครงการ' && w !== 'ก่อสร้าง' && i.name.includes(w)));
+                if (narrowed.length) list = narrowed;
+                list.sort((a, b) => b.y2570 - a.y2570);
+                if (list.length) {
+                    cite(list.slice(0, 8));
+                    const kind = isBuild ? 'รายการก่อสร้าง/ปรับปรุง' : 'โครงการ';
+                    return { text: `พบ ${list.length} ${kind}${scope ? 'ใน' + shortPlan(scope.plan || scope.work) : ''} ที่ตั้งงบปี 2570 รวม ${fmt(sum(list, 'y2570'))} บาท รายการที่วงเงินสูงสุด:\n${list.slice(0, 8).map(itemLine).join('\n')}${list.length > 8 ? `\n…และอีก ${list.length - 8} รายการ` : ''}`, refs: [...refs].map(p => 'หน้า ' + p) };
+                }
+            }
+
+            if (scope) {
+                if (scope.plan) {
+                    const p = D.plans.find(x => x.name === scope.plan);
+                    const top = D.items.filter(inScope).sort((a, b) => b.y2570 - a.y2570).slice(0, 3);
+                    cite(top);
+                    return { text: `${p.name} ปี 2570 ตั้งงบไว้ ${fmt(p.y2570)} บาท (${fmt(p.y2570 / TOTAL * 100, 1)}% ของงบทั้งหมด) เทียบปี 2569 ที่ ${fmt(p.y2569, 2)} บาท\n\nแยกตามงาน:\n${p.works.map(w => `• ${w.name} — ${fmt(w.y2570)} บาท`).join('\n')}\n\nรายการที่วงเงินสูงสุด:\n${top.map(itemLine).join('\n')}`, refs: [...refs].map(x => 'หน้า ' + x) };
+                }
+                const w = D.plans.flatMap(p => p.works).find(x => x.name === scope.work);
+                const top = D.items.filter(inScope).sort((a, b) => b.y2570 - a.y2570).slice(0, 4);
+                cite(top);
+                return { text: `${w.name} ปี 2570 ตั้งงบไว้ ${fmt(w.y2570)} บาท\n\nรายการที่วงเงินสูงสุด:\n${top.map(itemLine).join('\n')}`, refs: [...refs].map(x => 'หน้า ' + x) };
+            }
+
+            // ค้นหารายการด้วยคำสำคัญ
+            const ws = words(q);
+            const scored = D.items.map(i => {
+                const hit = ws.filter(w => i.name.includes(w));
+                return { i, n: hit.length, s: hit.reduce((a, w) => a + w.length, 0) };
+            }).filter(x => x.n > 0)
+                // ตรงหลายคำก่อน แล้วจึงรายการที่มีงบปี 2570 ก่อนรายการที่ไม่ได้ตั้งงบ
+                .sort((a, b) => b.n - a.n || (b.i.y2570 > 0) - (a.i.y2570 > 0) || b.s - a.s || b.i.y2570 - a.i.y2570);
+            if (scored.length) {
+                const best = scored[0];
+                const hits = scored.filter(x => x.n === best.n && x.s >= best.s * 0.6).slice(0, 5).map(x => x.i);
+                cite(hits);
+                return { text: `พบรายการที่เกี่ยวข้อง ${hits.length} รายการ:\n${hits.map(i => `• ${i.name}\n   ปี 2570: ${fmt(i.y2570)} บาท · ปี 2569: ${fmt(i.y2569)} บาท (${shortPlan(i.plan)} › ${i.work}, หน้า ${i.page})`).join('\n')}`, refs: [...refs].map(x => 'หน้า ' + x) };
+            }
+
+            if (/รวม|ทั้งสิ้น|ทั้งหมด|งบประมาณ/.test(q)) {
+                return { text: `งบประมาณรายจ่ายปี 2570 รวมทั้งสิ้น ${fmt(TOTAL)} บาท เพิ่มขึ้น ${fmt(pct(TOTAL, TOTAL_PREV), 2)}% จากปี 2569 (${fmt(TOTAL_PREV)} บาท) ประกอบด้วย ${D.plans.length} แผนงาน ${D.items.length} รายการ`, refs: ['หน้า 12', 'หน้า 23–73'] };
+            }
+            return { text: 'ขออภัยครับ ไม่พบข้อมูลที่ตรงกับคำถามในเอกสารที่อัพโหลด ลองระบุชื่อรายการ แผนงาน หรือกอง เช่น "เบี้ยยังชีพผู้สูงอายุ" หรือ "งบกองช่าง"', refs: [] };
+        }
+
+        function appendMessage(text, fromUser, refs = []) {
+            const row = document.createElement('div');
+            row.className = 'flex items-end gap-2.5 fade-in ' + (fromUser ? 'justify-end' : '');
+            const bubble = document.createElement('div');
+            bubble.className = fromUser
+                ? 'bg-gradient-to-br from-brand-600 to-teal-600 text-white px-4 py-3 rounded-2xl rounded-br-md max-w-[85%] sm:max-w-xl shadow-sm leading-relaxed'
+                : 'bg-white px-4 py-3 rounded-2xl rounded-bl-md ring-1 ring-slate-200 max-w-[85%] sm:max-w-xl text-slate-700 shadow-sm leading-relaxed whitespace-pre-line';
+            bubble.innerText = text;
+            if (refs.length) {
+                const r = document.createElement('div');
+                r.className = 'mt-3 pt-2.5 border-t border-slate-100 flex flex-wrap gap-1.5';
+                r.innerHTML = `<span class="text-xs text-slate-400 mr-1"><i class="fa-solid fa-file-pdf text-rose-400"></i> อ้างอิง:</span>` +
+                    refs.slice(0, 8).map(x => `<span class="text-[11px] font-medium bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">${x}</span>`).join('');
+                bubble.appendChild(r);
+            }
+            if (!fromUser) {
+                const avatar = document.createElement('div');
+                avatar.className = 'w-8 h-8 shrink-0 rounded-xl bg-gradient-to-br from-brand-500 to-teal-600 text-white flex items-center justify-center text-xs';
+                avatar.innerHTML = '<i class="fa-solid fa-robot"></i>';
+                row.appendChild(avatar);
+            }
+            row.appendChild(bubble);
+            chatLog.appendChild(row);
+            chatLog.scrollTop = chatLog.scrollHeight;
+            return row;
+        }
+
+        function sendChat(text) {
+            text = (text || '').trim();
+            if (!text) return;
+            document.getElementById('chat-input').value = '';
+            appendMessage(text, true);
+            const typing = appendMessage('กำลังค้นหาข้อมูลจากเอกสาร...', false);
+            typing.querySelector('div:last-child').classList.add('text-slate-400', 'italic');
+            setTimeout(() => {
+                typing.remove();
+                const a = answer(text);
+                appendMessage(a.text, false, a.refs);
+            }, 700);
+        }
+
+        function resetChat() {
+            chatLog.innerHTML = '';
+            appendMessage(greeting, false);
+        }
+
+        renderDashboard();
+        initBudget();
+        initUpload();
+        resetChat();
+    </script>
+</body>
+</html>
