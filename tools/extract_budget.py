@@ -1,9 +1,10 @@
 """แปลง "รายงานประมาณการรายจ่าย" จากไฟล์ข้อบัญญัติงบประมาณ (PDF จากระบบ e-LAAS) เป็น JSON
 
-ใช้งาน:
-    python tools/extract_budget.py a_230926_103242.pdf data/budget_2570.json
+ใช้งาน (index.html โหลดไฟล์ data/budget_2570.js):
+    python tools/extract_budget.py a_230926_103242.pdf data/budget_2570.js
 
 ถ้าไฟล์ปลายทางลงท้าย .js จะเขียนเป็น `window.BUDGET_DATA = {...}` ให้หน้าเว็บโหลดผ่าน file:// ได้
+ถ้าลงท้ายอื่น (เช่น .json) จะเขียนเป็น JSON ล้วน
 
 หน้ารายงานในไฟล์เป็นแนวนอน (rotate 90) ข้อความมีชั้น text จริง จึงอ่านตำแหน่ง span ได้โดยตรง
 หลังหมุน: bbox[0] = ตำแหน่งแถว, bbox[1] = ตำแหน่งคอลัมน์
